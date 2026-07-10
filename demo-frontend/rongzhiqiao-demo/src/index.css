@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 融智桥 DEMO - 全局样式 */
+:root {
+  --demo-badge-color: #eab308;
+  --demo-badge-bg: #fef9c3;
+}
+
+body {
+  margin: 0;
+  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #f8fafc;
+}
+
+/* 演示数据标注 */
+.demo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #92400e;
+  background: #fef9c3;
+  border: 1px solid #facc15;
+}
+
+.demo-badge::before {
+  content: "🟡";
+  font-size: 10px;
+}
+
+/* 闯关进度条 */
+.progress-step {
+  @apply w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all;
+}
+
+.progress-step.active {
+  @apply bg-primary-600 text-white shadow-lg shadow-primary-200;
+}
+
+.progress-step.done {
+  @apply bg-green-500 text-white;
+}
+
+.progress-step.pending {
+  @apply bg-gray-200 text-gray-400;
+}
+
+/* 名片卡片 */
+.business-card {
+  @apply bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow;
+}
+
+/* 聊天气泡 */
+.chat-bubble {
+  @apply max-w-[80%] p-4 rounded-2xl text-sm leading-relaxed;
+}
+
+.chat-bubble.expert {
+  @apply bg-gray-100 text-gray-800 rounded-tl-sm;
+}
+
+.chat-bubble.user {
+  @apply bg-primary-600 text-white rounded-tr-sm ml-auto;
+}
+
+/* 闯关卡牌 */
+.pain-card {
+  @apply bg-white border-2 border-gray-200 rounded-xl p-6 cursor-pointer transition-all hover:border-primary-400 hover:shadow-lg hover:-translate-y-1;
+}
+
+.pain-card.selected {
+  @apply border-primary-500 bg-primary-50 shadow-lg;
+}
+
+/* 仪表盘卡片 */
+.stat-card {
+  @apply bg-white rounded-xl p-5 shadow-sm border border-gray-100;
+}
+
+.stat-value {
+  @apply text-3xl font-bold text-primary-700;
+}
+
+.stat-label {
+  @apply text-sm text-gray-500 mt-1;
+}
+
+/* NDA协议区 */
+.nda-scroll {
+  @apply bg-gray-50 border border-gray-200 rounded-lg p-6 max-h-64 overflow-y-auto text-sm text-gray-600 leading-relaxed;
+}
+
+/* 到期倒计时 */
+.expiry-badge {
+  @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium;
+}
+
+.expiry-badge.warning {
+  @apply bg-amber-100 text-amber-800;
+}
+
+.expiry-badge.expired {
+  @apply bg-red-100 text-red-800;
+}

@@ -1,0 +1,46 @@
+# ============ 依赖 ============
+node_modules/
+.pnp/
+.pnp.js
+
+# ============ 构建产物 ============
+build/
+dist/
+out/
+*.tsbuildinfo
+
+# ============ 打包 / 快照（不入库，体积大且易过期） ============
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.7z
+*.rar
+*.part.*
+*.tar.gz.txt
+*.zip.txt
+
+# ============ 沙箱 / Agent 工作区 ============
+.codebuddy/
+.codebuddy/**
+
+# ============ 编辑器 & 系统文件 ============
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============ 环境变量 / 机密 ============
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# ============ 根目录遗留的重复源文件（以 demo-frontend 下为准） ============
+/FilesPage.tsx
+/proxy.js
