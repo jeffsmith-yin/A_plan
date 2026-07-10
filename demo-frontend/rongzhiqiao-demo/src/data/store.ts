@@ -907,6 +907,8 @@ function recordSettlement(total: number, payer: string, orderId: string): Settle
   const list = getSettlements();
   list.push(settle);
   saveSettlements(list);
+  // 将分账汇总到各方钱包（按角色持有者）
+  distributeSettlement(splits, orderId, settle.blockNumber, settle.txHash, settle.timestamp);
   return settle;
 }
 
@@ -927,6 +929,79 @@ export function getSettlementStats() {
   const list = getSettlements();
   const totalAmount = list.reduce((s, x) => s + x.totalAmount, 0);
   return { count: list.length, totalAmount };
+}
+
+// ============ 钱包（结算汇总到个人） ============
+// 每笔结算按角色分账后，自动汇总到对应角色持有者的钱包，可在「我的」查看。
+
+export interface WalletEntry {
+  id: string;
+  role: RoleType;
+  roleName: string;
+  amount: number;
+  orderId: string;
+  blockNumber: number;
+  txHash: string;
+  timestamp: number;
+}
+
+export interface Wallet {
+  phone: string;
+  balance: number;
+  entries: WalletEntry[];
+}
+
+const WALLET_KEY = "rzq_wallets_v1";
+
+function getWallets(): Record<string, Wallet> {
+  try { const raw = localStorage.getItem(WALLET_KEY); return raw ? JSON.parse(raw) : {}; }
+  catch { return {}; }
+}
+
+function saveWallets(w: Record<string, Wallet>): void {
+  localStorage.setItem(WALLET_KEY, JSON.stringify(w));
+}
+
+export function getWallet(phone: string): Wallet {
+  const all = getWallets();
+  if (!all[phone]) all[phone] = { phone, balance: 0, entries: [] };
+  return all[phone];
+}
+
+function creditWallet(phone: string, entry: Omit<WalletEntry, "id">): void {
+  const all = getWallets();
+  if (!all[phone]) all[phone] = { phone, balance: 0, entries: [] };
+  const w = all[phone];
+  w.balance += entry.amount;
+  w.entries.push({ ...entry, id: "we_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6) });
+  saveWallets(all);
+}
+
+// 将一笔结算的分账汇总到对应角色的持有者钱包
+function distributeSettlement(splits: SettlementSplit[], orderId: string, blockNumber: number, txHash: string, timestamp: number): void {
+  for (const s of splits) {
+    let phones: string[] = [];
+    if (s.role === "platform") {
+      const sa = getPersons().find(p => p.isSuperAdmin && !p.deleted);
+      if (sa) phones = [sa.phone];
+    } else {
+      phones = getRoles()
+        .filter(r => r.role === s.role && r.personPhone && r.personPhone !== "platform_system")
+        .map(r => r.personPhone as string);
+    }
+    phones = [...new Set(phones)];
+    if (phones.length === 0) {
+      // 无对应持有者时计入平台系统钱包，确保总额一致
+      creditWallet("platform_system", { role: s.role, roleName: s.roleName, amount: s.amount, orderId, blockNumber, txHash, timestamp });
+    } else {
+      const per = Math.floor(s.amount / phones.length);
+      let remainder = s.amount - per * phones.length;
+      phones.forEach((p, i) => {
+        const amt = per + (i === 0 ? remainder : 0);
+        if (amt > 0) creditWallet(p, { role: s.role, roleName: s.roleName, amount: amt, orderId, blockNumber, txHash, timestamp });
+      });
+    }
+  }
 }
 
 // ============ 演示商品数据 ============

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageContainer, Button } from "../components/Common";
 import {
-  getCurrentUser, updatePerson, getCurrentPhone, getUserRoles, getRoles,
+  getCurrentUser, updatePerson, getCurrentPhone, getUserRoles, getRoles, getWallet,
   logout, deleteAccount, maskPhone, ROLE_LABELS, isCurrentUserSuperAdmin,
 } from "../data/store";
 
@@ -239,6 +239,7 @@ const MyPage: React.FC = () => {
   const phone = getCurrentPhone();
   const userRoles = getUserRoles();
   const isSuperAdmin = isCurrentUserSuperAdmin();
+  const wallet = phone ? getWallet(phone) : { phone: "", balance: 0, entries: [] };
 
   // 我推荐的人数（推荐人是我任一角色的成员数）
   const myRoleIds = userRoles.map(r => r.id);
@@ -344,6 +345,34 @@ const MyPage: React.FC = () => {
               <p className="text-xs text-gray-400 mt-2">我推荐了 <strong className="text-amber-600">{referralCount}</strong> 位成员（每位 +2 分）</p>
             </div>
           )}
+        </div>
+
+        {/* 我的钱包 */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-800">💰 我的钱包</h3>
+            <span className="text-xs text-gray-400">合约结算自动到账</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-3xl font-bold text-green-600">¥{wallet.balance.toLocaleString()}</div>
+              <div className="text-xs text-gray-400 mt-1">累计到账（来自 W3 合约自动结算）</div>
+            </div>
+            <div className="text-right text-xs text-gray-400">
+              <p>{wallet.entries.length} 笔结算</p>
+            </div>
+          </div>
+          {wallet.entries.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-1 max-h-44 overflow-y-auto">
+              {[...wallet.entries].sort((a, b) => b.timestamp - a.timestamp).slice(0, 6).map(e => (
+                <div key={e.id} className="flex items-center justify-between text-sm py-0.5">
+                  <span>{ROLE_LABELS[e.role]?.icon} {e.roleName}</span>
+                  <span className="font-medium text-gray-700">+¥{e.amount.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-[11px] text-gray-400 mt-2">💡 去产品市场下单并完成支付，分账将自动进入你的钱包</p>
         </div>
 
         {/* 功能菜单 */}
