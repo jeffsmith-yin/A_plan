@@ -252,6 +252,12 @@ const HubPage: React.FC = () => {
             <div className="font-medium text-gray-800 text-xs">数据看板</div>
             <div className="text-[10px] text-gray-400">平台统计</div>
           </button>
+          <button onClick={() => navigate("/settlement")}
+            className="bg-white rounded-xl p-3 border border-gray-200 hover:border-primary-400 hover:shadow-md transition-all text-center">
+            <div className="text-xl mb-1">⛓</div>
+            <div className="font-medium text-gray-800 text-xs">区块链结算</div>
+            <div className="text-[10px] text-gray-400">W3合约分账</div>
+          </button>
           <button onClick={() => navigate("/files")}
             className="bg-white rounded-xl p-3 border border-gray-200 hover:border-primary-400 hover:shadow-md transition-all text-center">
             <div className="text-xl mb-1">📁</div>

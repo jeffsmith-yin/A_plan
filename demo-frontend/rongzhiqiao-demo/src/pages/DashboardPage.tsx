@@ -5,13 +5,14 @@ import {
   getRoles, getMessages, getPersons, kickPerson, unkickPerson,
   isCurrentUserAdmin, isCurrentUserSuperAdmin, getCurrentUser, maskPhone, getDesensitizeRules,
   setSubAdmin, removeSubAdmin, getAdminCount, MAX_SUB_ADMINS, restoreAccount,
+  getNDASignedCount, getNDARecords, getSettlementStats, ROLE_LABELS,
 } from "../data/store";
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const isAdmin = isCurrentUserAdmin();
   const user = getCurrentUser();
-  const [stats, setStats] = useState({ experts: 0, enterprises: 0, ai: 0, platforms: 0, total: 0, messages: 0, persons: 0, desensitizeRules: 0 });
+  const [stats, setStats] = useState({ experts: 0, enterprises: 0, ai: 0, platforms: 0, total: 0, messages: 0, persons: 0, desensitizeRules: 0, ndaSigned: 0, ndaTotal: 0, settlementCount: 0, settlementTotal: 0 });
   const [persons, setPersons] = useState<ReturnType<typeof getPersons>>([]);
   const [showUserMgmt, setShowUserMgmt] = useState(false);
 
@@ -20,6 +21,7 @@ const DashboardPage: React.FC = () => {
       const roles = getRoles();
       const msgs = getMessages();
       const allPersons = getPersons();
+      const stl = getSettlementStats();
       setStats({
         experts: roles.filter(r => r.role === "expert").length,
         enterprises: roles.filter(r => r.role === "enterprise").length,
@@ -29,6 +31,10 @@ const DashboardPage: React.FC = () => {
         messages: msgs.length,
         persons: allPersons.length,
         desensitizeRules: getDesensitizeRules().length,
+        ndaSigned: getNDASignedCount(),
+        ndaTotal: roles.length,
+        settlementCount: stl.count,
+        settlementTotal: stl.totalAmount,
       });
       setPersons(allPersons);
     };
@@ -111,6 +117,64 @@ const DashboardPage: React.FC = () => {
           <div className="text-center mt-3">
             <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">🟡 演示数据</span>
           </div>
+        </div>
+
+        {/* 保密协议签署情况 */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-gray-800">🔒 保密协议签署情况</h3>
+            <span className="text-xs text-gray-400">DEMO 参与方 NDA</span>
+          </div>
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{stats.ndaSigned}</div>
+              <div className="text-xs text-gray-500 mt-1">已签署（人）</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-700">{stats.ndaTotal}</div>
+              <div className="text-xs text-gray-500 mt-1">参与方总数</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary-700">
+                {stats.ndaTotal > 0 ? Math.round((stats.ndaSigned / stats.ndaTotal) * 100) : 0}%
+              </div>
+              <div className="text-xs text-gray-500 mt-1">签署率</div>
+            </div>
+          </div>
+          {getNDARecords().filter(r => r.expiresAt > Date.now()).length > 0 ? (
+            <div className="space-y-1">
+              {getNDARecords().filter(r => r.expiresAt > Date.now()).slice(0, 8).map(r => (
+                <div key={r.id} className="flex items-center justify-between text-sm py-1 border-t border-gray-50">
+                  <span>{ROLE_LABELS[r.role]?.icon} {r.signerName}</span>
+                  <span className="text-xs text-gray-400">签署于 {new Date(r.signedAt).toLocaleDateString("zh-CN")}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-gray-400 text-sm py-2">暂无签署记录</p>
+          )}
+        </div>
+
+        {/* 区块链自动结算概览 */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-gray-800">⛓ 区块链自动结算概览</h3>
+            <button onClick={() => navigate("/settlement")}
+              className="text-xs text-primary-600 hover:text-primary-700 px-3 py-1.5 rounded-lg border border-primary-200">
+              查看账本 →
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary-700">{stats.settlementCount}</div>
+              <div className="text-xs text-gray-500 mt-1">已结算笔数</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary-700">¥{stats.settlementTotal.toLocaleString()}</div>
+              <div className="text-xs text-gray-500 mt-1">累计结算金额</div>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 mt-3 text-center">按合约规则（平台10% / 专家60% / AI 30%）自动分账上链</p>
         </div>
 
         {/* 超管：子管理员管理 */}
@@ -254,6 +318,7 @@ const DashboardPage: React.FC = () => {
 
         <div className="flex gap-3 flex-wrap">
           <Button onClick={() => navigate("/leaderboard")} variant="outline">🏆 积分排行榜</Button>
+          <Button onClick={() => navigate("/settlement")} variant="outline">⛓ 区块链结算</Button>
           <Button onClick={() => navigate("/skill-packs")} variant="outline">📦 技能包</Button>
           <Button onClick={() => navigate("/hub")} variant="outline">🏠 平台大厅</Button>
           <Button onClick={() => navigate("/onboarding")} variant="primary">➕ 注册新角色</Button>

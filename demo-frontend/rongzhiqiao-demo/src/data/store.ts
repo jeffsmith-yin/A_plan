@@ -821,7 +821,112 @@ export function payOrder(orderId: string): void {
     order.paidAt = Date.now();
     localStorage.setItem(STORAGE_KEYS.orders, JSON.stringify(orders));
     clearCart();
+    // W3 合约自动结算：付款成功后按规则自动分账并"上链"
+    createSettlementForOrder(order);
   }
+}
+
+// ============ 区块链 / W3 合约自动结算（DEMO 原型） ============
+// 说明：本段为 DEMO 原型，用本地模拟"链上账本"展示按合约规则自动分账。
+// 正式版将对接真实区块链 / 智能合约（以太坊、Polygon 等）实现真实自动付账。
+
+export const SETTLEMENT_BASE_BLOCK = 18_500_000;
+
+// 默认分账规则（合约条款）：企业付款后，平台收服务费，专家与 AI 人才按比例分账
+export const DEFAULT_SETTLEMENT_RULE = {
+  platformFeeRate: 0.10,  // 平台方服务费 10%
+  expertRate: 0.60,       // 行业专家（方案） 60%
+  aiRate: 0.30,           // AI人才（实现） 30%
+};
+
+export interface SettlementSplit {
+  role: RoleType;
+  roleName: string;
+  amount: number;
+  txHash: string;
+  status: "settled";
+}
+
+export interface Settlement {
+  id: string;
+  orderId: string;
+  payer: string;            // 付款方（企业/客户）名称
+  totalAmount: number;
+  splits: SettlementSplit[];
+  blockNumber: number;
+  blockHash: string;
+  txHash: string;           // 合约交易哈希
+  timestamp: number;
+  status: "settled";
+}
+
+const SETTLEMENT_KEY = "rzq_settlements_v1";
+
+function randHex(len: number): string {
+  const chars = "0123456789abcdef";
+  let s = "";
+  for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * 16)];
+  return s;
+}
+
+export function getSettlements(): Settlement[] {
+  try { const raw = localStorage.getItem(SETTLEMENT_KEY); return raw ? JSON.parse(raw) : []; }
+  catch { return []; }
+}
+
+function saveSettlements(list: Settlement[]): void {
+  localStorage.setItem(SETTLEMENT_KEY, JSON.stringify(list));
+}
+
+// 内部：按规则生成分账并写入"链上账本"
+function recordSettlement(total: number, payer: string, orderId: string): Settlement {
+  const rule = DEFAULT_SETTLEMENT_RULE;
+  const platformFee = Math.round(total * rule.platformFeeRate);
+  const expertAmt = Math.round(total * rule.expertRate);
+  const aiAmt = Math.round(total * rule.aiRate);
+  // 四舍五入余数归专家，保证总额一致
+  const remainder = total - (platformFee + expertAmt + aiAmt);
+  const splits: SettlementSplit[] = [
+    { role: "platform", roleName: "平台方（服务费）", amount: platformFee, txHash: "0x" + randHex(64), status: "settled" },
+    { role: "expert", roleName: "行业专家（方案）", amount: expertAmt + remainder, txHash: "0x" + randHex(64), status: "settled" },
+    { role: "ai", roleName: "AI人才（实现）", amount: aiAmt, txHash: "0x" + randHex(64), status: "settled" },
+  ];
+  const blockNumber = SETTLEMENT_BASE_BLOCK + getSettlements().length + 1;
+  const settle: Settlement = {
+    id: "stl_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+    orderId,
+    payer,
+    totalAmount: total,
+    splits,
+    blockNumber,
+    blockHash: "0x" + randHex(64),
+    txHash: "0x" + randHex(64),
+    timestamp: Date.now(),
+    status: "settled",
+  };
+  const list = getSettlements();
+  list.push(settle);
+  saveSettlements(list);
+  return settle;
+}
+
+// 订单付款成功后自动结算（由 payOrder 调用）
+export function createSettlementForOrder(order: Order): Settlement | null {
+  if (order.totalAmount <= 0) return null;
+  const payerName = order.ndaSigner || "企业客户";
+  return recordSettlement(order.totalAmount, payerName, order.id);
+}
+
+// DEMO：手动模拟一笔结算（无需真实订单）
+export function simulateSettlement(total: number, payer: string): Settlement | null {
+  if (total <= 0) return null;
+  return recordSettlement(total, payer || "企业客户", "demo_" + Date.now());
+}
+
+export function getSettlementStats() {
+  const list = getSettlements();
+  const totalAmount = list.reduce((s, x) => s + x.totalAmount, 0);
+  return { count: list.length, totalAmount };
 }
 
 // ============ 演示商品数据 ============
