@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageContainer, Button } from "../components/Common";
 import {
-  getCurrentUser, updatePerson, getCurrentPhone, getUserRoles,
+  getCurrentUser, updatePerson, getCurrentPhone, getUserRoles, getRoles,
   logout, deleteAccount, maskPhone, ROLE_LABELS, isCurrentUserSuperAdmin,
 } from "../data/store";
 
@@ -240,6 +240,10 @@ const MyPage: React.FC = () => {
   const userRoles = getUserRoles();
   const isSuperAdmin = isCurrentUserSuperAdmin();
 
+  // 我推荐的人数（推荐人是我任一角色的成员数）
+  const myRoleIds = userRoles.map(r => r.id);
+  const referralCount = getRoles().filter(r => r.referrerId && myRoleIds.includes(r.referrerId)).length;
+
   const [avatar, setAvatar] = useState(user?.avatar || "");
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
 
@@ -337,12 +341,33 @@ const MyPage: React.FC = () => {
                   </div>
                 );
               })}
+              <p className="text-xs text-gray-400 mt-2">我推荐了 <strong className="text-amber-600">{referralCount}</strong> 位成员（每位 +2 分）</p>
             </div>
           )}
         </div>
 
         {/* 功能菜单 */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden divide-y divide-gray-50">
+          <button onClick={() => navigate("/nda-sign")}
+            className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-left">
+            <span className="text-xl">🔒</span>
+            <div className="flex-1">
+              <span className="font-medium text-gray-800 text-sm">保密协议 (NDA)</span>
+              <p className="text-xs text-gray-400">签署 / 续签 DEMO 保密协议</p>
+            </div>
+            <span className="text-gray-300">→</span>
+          </button>
+
+          <button onClick={() => navigate("/leaderboard")}
+            className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-left">
+            <span className="text-xl">🏆</span>
+            <div className="flex-1">
+              <span className="font-medium text-gray-800 text-sm">积分排行榜</span>
+              <p className="text-xs text-gray-400">查看成员积分与推荐</p>
+            </div>
+            <span className="text-gray-300">→</span>
+          </button>
+
           <button onClick={() => navigate("/profile")}
             className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-left">
             <span className="text-xl">⚙️</span>

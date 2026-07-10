@@ -2,6 +2,7 @@ import React from "react";
 import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import NDAPage from "./pages/NDAPage";
 import LoginPage from "./pages/LoginPage";
+import NDASignPage from "./pages/NDASignPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import HubPage from "./pages/HubPage";
 import ChatPage from "./pages/ChatPage";
@@ -23,6 +24,7 @@ function App() {
         <Route path="/" element={<Navigate to="/nda" replace />} />
         <Route path="/nda" element={<NDAPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/nda-sign" element={<NDASignPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/hub" element={<HubPage />} />
         <Route path="/chat/:targetId" element={<ChatPage />} />

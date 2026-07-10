@@ -445,7 +445,100 @@ export function deleteRole(id: string): void {
   localStorage.setItem(STORAGE_KEYS.messages, JSON.stringify(getMessages().filter(m => m.from !== id)));
 }
 
-// ============ NDA ============
+// ============ NDA（参与方保密协议） ============
+// 注：MarketPage 的"购买 DEMO 产品前签 NDA"仍使用下方全局 hasSignedNDA/markNDASigned。
+// 本段为"参与 DEMO 的各方（专家/AI/企业/平台）签署保密协议"的完整记录。
+
+export const NDA_VERSION = "v1.0";
+export const NDA_VALID_DAYS = 30; // DEMO 默认有效期（天），到期可续签
+
+export const NDA_TEXT = `融智桥 DEMO 保密协议（NDA）
+
+本协议由参与融智桥平台 DEMO 体验的各方（行业专家、AI人才、企业客户、平台方）共同签署。
+
+一、保密信息范围
+参与 DEMO 期间，各方交换的需求、方案、数据、商业计划、客户资料、技术细节等，均属保密信息。
+
+二、保密义务
+1. 各方应对保密信息严格保密，未经披露方书面同意，不得向任何第三方披露。
+2. 仅可将保密信息用于本 DEMO 合作之目的，不得用于其他商业用途。
+
+三、数据说明
+本 DEMO 全部数据为演示数据，非真实交易或真实个人信息。正式合作以另行签署的商务协议为准。
+
+四、协议期限
+本协议自签署之日起生效，有效期 ${NDA_VALID_DAYS} 天。到期前可申请续签；DEMO 终止时本协议自动失效。
+
+五、违约责任
+违反保密义务的一方，应承担相应法律责任，并赔偿守约方损失。
+
+签署即表示您已阅读、理解并同意上述全部条款。
+（本 DEMO 版本，仅供体验）`;
+
+export interface NDARecord {
+  id: string;
+  roleId: string;
+  signerName: string;
+  role: RoleType;
+  version: string;
+  signedAt: number;
+  expiresAt: number;
+  renewedAt: number | null;
+}
+
+const NDA_RECORDS_KEY = "rzq_nda_records_v1";
+
+export function getNDARecords(): NDARecord[] {
+  try { const raw = localStorage.getItem(NDA_RECORDS_KEY); return raw ? JSON.parse(raw) : []; }
+  catch { return []; }
+}
+
+function saveNDARecords(records: NDARecord[]): void {
+  localStorage.setItem(NDA_RECORDS_KEY, JSON.stringify(records));
+}
+
+// 返回当前角色有效（未过期）的 NDA 记录；过期视为未签
+export function getNDAByRole(roleId: string): NDARecord | null {
+  const rec = getNDARecords().find(r => r.roleId === roleId);
+  if (!rec) return null;
+  if (rec.expiresAt < Date.now()) return null;
+  return rec;
+}
+
+export function signNDA(roleId: string, signerName: string, role: RoleType): NDARecord {
+  const records = getNDARecords().filter(r => r.roleId !== roleId);
+  const now = Date.now();
+  const rec: NDARecord = {
+    id: "nda_" + roleId,
+    roleId,
+    signerName,
+    role,
+    version: NDA_VERSION,
+    signedAt: now,
+    expiresAt: now + NDA_VALID_DAYS * 24 * 60 * 60 * 1000,
+    renewedAt: null,
+  };
+  records.push(rec);
+  saveNDARecords(records);
+  return rec;
+}
+
+export function renewNDA(roleId: string): NDARecord | null {
+  const rec = getNDARecords().find(r => r.roleId === roleId);
+  if (!rec) return null;
+  rec.expiresAt = Date.now() + NDA_VALID_DAYS * 24 * 60 * 60 * 1000;
+  rec.renewedAt = Date.now();
+  saveNDARecords(getNDARecords().map(r => (r.roleId === roleId ? rec : r)));
+  return rec;
+}
+
+// 当前已签署且未过期的参与方数量
+export function getNDASignedCount(): number {
+  const now = Date.now();
+  return getNDARecords().filter(r => r.expiresAt > now).length;
+}
+
+// 兼容：购买 DEMO 产品前的全局 NDA 标记（MarketPage 使用）
 export function hasSignedNDA(): boolean {
   return localStorage.getItem(STORAGE_KEYS.ndaSkipped) === "true";
 }
@@ -457,7 +550,16 @@ export function markNDASigned(): void {
 export function addReferralScore(referrerId: string): void {
   const roles = getRoles();
   const referrer = roles.find(r => r.id === referrerId);
-  if (referrer) { referrer.score += SCORE_RULES.REFERRAL; saveRole(referrer); }
+  if (referrer) {
+    referrer.score += SCORE_RULES.REFERRAL;
+    saveRole(referrer);
+    // 同步增加推荐人所属用户（Person）的积分，使"我的"页面也能看到推荐得分
+    if (referrer.personPhone && referrer.personPhone !== "platform_system") {
+      const persons = getPersons();
+      const p = persons.find(p => p.phone === referrer.personPhone);
+      if (p) { p.score += SCORE_RULES.REFERRAL; savePersons(persons); }
+    }
+  }
 }
 
 export function isDuplicateReferral(referrerId: string, newName: string): boolean {

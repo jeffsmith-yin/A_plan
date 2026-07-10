@@ -505,6 +505,7 @@ const OnboardingPage: React.FC = () => {
             <p className="text-gray-500 mb-8">欢迎加入融智桥，开始四方协作</p>
             <div className="flex gap-4 justify-center">
               <Button onClick={() => navigate("/hub")} size="lg">进入平台大厅 →</Button>
+              <Button onClick={() => navigate("/nda-sign")} variant="outline">🔒 签署保密协议</Button>
               <Button onClick={() => { setCurrentRoleId(null); setStep("choose"); setSelectedRoles([]); }} variant="outline">注册更多角色</Button>
             </div>
           </div>
