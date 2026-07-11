@@ -1,0 +1,24 @@
+{
+  "name": "融智桥DEMO",
+  "appid": "",
+  "description": "融智桥 DEMO 跨端小程序（Uni-app Vue3 + Vite）",
+  "versionName": "0.1.0",
+  "versionCode": "1",
+  "transformPx": false,
+  "app-plus": {
+    "usingComponents": true,
+    "nvueStyleCompiler": "uni-app",
+    "compilerVersion": 3
+  },
+  "h5": {
+    "router": { "mode": "hash" },
+    "title": "融智桥 DEMO 原型",
+    "darkmode": false
+  },
+  "mp-weixin": {
+    "appid": "",
+    "setting": { "urlCheck": false, "minified": true },
+    "style": "v3"
+  },
+  "vueVersion": "3"
+}
