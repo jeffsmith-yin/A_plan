@@ -51,7 +51,9 @@
 - 数据模型 `Wallet`：`balance` / `entries` / `withdrawals`
 - 自动入账：`getWallet` / `creditWallet` / `distributeSettlement`（平台费入超级管理员钱包，多人平分）
 - `MyPage` 钱包卡片：展示余额 + 近 6 笔结算
-- ⚠️ `requestWithdrawal(phone, amount, method)` **数据层已写入 store.ts**，但 **MyPage 暂未接提现表单 / 明细导出按钮**；且该 store.ts 改动**尚未 git 提交**
+- **提现申请**：`requestWithdrawal` 已接通 UI（金额 + 微信/支付宝/银行卡，超余额拦截，记录状态「处理中」），提现记录可展示
+- **明细导出**：钱包结算/提现明细支持一键导出 **CSV（带 BOM，Excel 友好）与 JSON**
+- 已 `react-scripts build` 并通过类型检查，缓存版本升 `rzq-v13`，已提交并推送 GitHub
 
 ### 7. 导航与入口
 - `App.tsx` 已登记路由 `/nda-sign`、`/settlement`
@@ -63,14 +65,14 @@
 ## 三、待办事项
 
 ### 🔴 高优先级（用户已明确要求，尚未完成）
-1. **钱包提现 / 明细导出 UI**
-   - store 层 `requestWithdrawal` 已就绪（写入后扣余额、生成 `withdrawals` 记录）
-   - 缺：`MyPage` 提现表单 + 余额明细 CSV/JSON 导出按钮
+1. ~~**钱包提现 / 明细导出 UI**~~ ✅ **已完成**（2025-07-11）
+   - `requestWithdrawal` 已接通 MyPage 提现表单（金额 + 微信/支付宝/银行卡，超余额拦截）
+   - 钱包明细支持一键导出 CSV（Excel 友好）/ JSON
+   - 已 build + 提交 + 推送，缓存版本 `rzq-v13`
 2. **多语言版本**
    - 用户说过「做多语言版本」，因环境 `400 input length too long` 错误中断未启动
    - 项目规范：先做简体中文（zh-CN），再做英文（en）等
-3. **提交未完成的 store.ts 改动并推送到 GitHub**
-   - 当前 `git status` 显示 `store.ts` 有 32 行新增 / 2 行删除未提交
+3. ~~**提交未完成的 store.ts 改动并推送到 GitHub**~~ ✅ **已完成**（随提现功能一并提交推送）
 
 ### 🟡 中优先级（项目路线图项，尚未启动）
 - 区块链**真实**对接（当前为模拟账本）
