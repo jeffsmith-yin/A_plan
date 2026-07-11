@@ -8,7 +8,9 @@ const DEFAULT_SHARE = { creator: 0.80, platform: 0.18, chain: 0.02 }
 const cart = { items: [] }
 
 export function addToCart(skillId) {
-  if (cart.items.includes(skillId)) return false
+  const kb = loadKB()
+  if (!kb.skills.some((s) => s.id === skillId)) return false // 不存在的技能包拒收
+  if (cart.items.includes(skillId)) return false // 已存在则去重
   cart.items.push(skillId)
   return true
 }

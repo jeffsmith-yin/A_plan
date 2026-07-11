@@ -114,6 +114,50 @@ function renderSettle(st){
 </body>
 </html>`
 
+// 安全解析请求体：畸形 JSON → 400（不抛 500），超体限 → 413（防 DoS）
+function readJson(req, res, limit = 1_000_000) {
+  return new Promise((resolve) => {
+    let responded = false
+    let size = 0
+    let body = ''
+    const fail = (code, msg) => {
+      if (responded) return
+      responded = true
+      res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' })
+      res.end(JSON.stringify({ error: msg }))
+      req.destroy()
+      resolve(null)
+    }
+    req.on('data', (c) => {
+      if (responded) return
+      size += c.length
+      if (size > limit) {
+        fail(413, 'payload too large')
+        return
+      }
+      body += c
+    })
+    req.on('end', () => {
+      if (responded) return
+      if (body === '') {
+        responded = true
+        resolve({})
+        return
+      }
+      try {
+        const parsed = JSON.parse(body)
+        responded = true
+        resolve(parsed)
+      } catch {
+        fail(400, 'invalid json')
+      }
+    })
+    req.on('error', () => {
+      if (!responded) fail(400, 'bad request')
+    })
+  })
+}
+
 const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
@@ -121,34 +165,18 @@ const server = http.createServer(async (req, res) => {
     return
   }
   if (req.method === 'POST' && req.url === '/analyze') {
-    let body = ''
-    req.on('data', (c) => (body += c))
-    req.on('end', () => {
-      try {
-        const { text } = JSON.parse(body || '{}')
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
-        res.end(JSON.stringify(analyze(text || '')))
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' })
-        res.end(JSON.stringify({ error: String(e) }))
-      }
-    })
+    const data = await readJson(req, res)
+    if (!data) return
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+    res.end(JSON.stringify(analyze(data.text || '')))
     return
   }
   if (req.method === 'POST' && req.url === '/cart/add') {
-    let body = ''
-    req.on('data', (c) => (body += c))
-    req.on('end', () => {
-      try {
-        const { id } = JSON.parse(body || '{}')
-        const ok = addToCart(id)
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
-        res.end(JSON.stringify({ ok, id }))
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' })
-        res.end(JSON.stringify({ error: String(e) }))
-      }
-    })
+    const data = await readJson(req, res)
+    if (!data) return
+    const ok = addToCart(data.id)
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+    res.end(JSON.stringify({ ok, id: data.id }))
     return
   }
   if (req.method === 'POST' && req.url === '/cart/checkout') {
