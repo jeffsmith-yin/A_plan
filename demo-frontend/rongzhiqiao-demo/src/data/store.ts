@@ -945,10 +945,19 @@ export interface WalletEntry {
   timestamp: number;
 }
 
+export interface WalletWithdrawal {
+  id: string;
+  amount: number;
+  method: string;
+  status: "processing" | "done";
+  requestedAt: number;
+}
+
 export interface Wallet {
   phone: string;
   balance: number;
   entries: WalletEntry[];
+  withdrawals: WalletWithdrawal[];
 }
 
 const WALLET_KEY = "rzq_wallets_v1";
@@ -964,17 +973,38 @@ function saveWallets(w: Record<string, Wallet>): void {
 
 export function getWallet(phone: string): Wallet {
   const all = getWallets();
-  if (!all[phone]) all[phone] = { phone, balance: 0, entries: [] };
+  if (!all[phone]) all[phone] = { phone, balance: 0, entries: [], withdrawals: [] };
   return all[phone];
 }
 
 function creditWallet(phone: string, entry: Omit<WalletEntry, "id">): void {
   const all = getWallets();
-  if (!all[phone]) all[phone] = { phone, balance: 0, entries: [] };
+  if (!all[phone]) all[phone] = { phone, balance: 0, entries: [], withdrawals: [] };
   const w = all[phone];
   w.balance += entry.amount;
   w.entries.push({ ...entry, id: "we_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6) });
   saveWallets(all);
+}
+
+// 申请提现（DEMO：扣除余额并记录，状态为处理中）
+export function requestWithdrawal(phone: string, amount: number, method: string): WalletWithdrawal {
+  if (!phone) throw new Error("请先登录");
+  if (!amount || amount <= 0) throw new Error("提现金额无效");
+  const all = getWallets();
+  const w = all[phone] || { phone, balance: 0, entries: [], withdrawals: [] };
+  if (amount > w.balance) throw new Error("提现金额不能超过钱包余额");
+  w.balance -= amount;
+  const rec: WalletWithdrawal = {
+    id: "wd_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+    amount,
+    method,
+    status: "processing",
+    requestedAt: Date.now(),
+  };
+  w.withdrawals.push(rec);
+  all[phone] = w;
+  saveWallets(all);
+  return rec;
 }
 
 // 将一笔结算的分账汇总到对应角色的持有者钱包

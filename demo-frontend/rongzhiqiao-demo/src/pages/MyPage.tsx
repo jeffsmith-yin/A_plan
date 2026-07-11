@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageContainer, Button } from "../components/Common";
 import {
-  getCurrentUser, updatePerson, getCurrentPhone, getUserRoles, getRoles, getWallet,
+  getCurrentUser, updatePerson, getCurrentPhone, getUserRoles, getRoles, getWallet, requestWithdrawal,
   logout, deleteAccount, maskPhone, ROLE_LABELS, isCurrentUserSuperAdmin,
 } from "../data/store";
 
@@ -239,7 +239,66 @@ const MyPage: React.FC = () => {
   const phone = getCurrentPhone();
   const userRoles = getUserRoles();
   const isSuperAdmin = isCurrentUserSuperAdmin();
-  const wallet = phone ? getWallet(phone) : { phone: "", balance: 0, entries: [] };
+  const [wallet, setWallet] = useState<ReturnType<typeof getWallet>>(() =>
+    phone ? getWallet(phone) : { phone: "", balance: 0, entries: [], withdrawals: [] }
+  );
+  const refreshWallet = () =>
+    setWallet(phone ? getWallet(phone) : { phone: "", balance: 0, entries: [], withdrawals: [] });
+
+  // 钱包提现（DEMO）
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawMethod, setWithdrawMethod] = useState("微信");
+  const [withdrawMsg, setWithdrawMsg] = useState("");
+
+  const handleWithdraw = () => {
+    if (!phone) { setWithdrawMsg("请先登录"); return; }
+    const amt = Number(withdrawAmount);
+    if (!amt || amt <= 0) { setWithdrawMsg("请输入有效的提现金额"); return; }
+    try {
+      requestWithdrawal(phone, amt, withdrawMethod);
+      setWithdrawAmount("");
+      setShowWithdraw(false);
+      setWithdrawMsg("");
+      refreshWallet();
+      alert("✅ 提现申请已提交，状态：处理中（DEMO）");
+    } catch (err: any) {
+      setWithdrawMsg(err?.message || "提现失败");
+    }
+  };
+
+  // 钱包明细导出（CSV / JSON）
+  const downloadFile = (content: string, filename: string, mime: string) => {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportWalletCSV = () => {
+    const rows = ["类型,角色/方式,金额(元),订单号或状态,区块号,时间"];
+    [...wallet.entries].sort((a, b) => b.timestamp - a.timestamp).forEach(e =>
+      rows.push(`结算,${e.roleName},${e.amount},${e.orderId},${e.blockNumber},${new Date(e.timestamp).toLocaleString("zh-CN")}`));
+    [...wallet.withdrawals].sort((a, b) => b.requestedAt - a.requestedAt).forEach(w =>
+      rows.push(`提现,${w.method},-${w.amount},${w.status},,${new Date(w.requestedAt).toLocaleString("zh-CN")}`));
+    downloadFile("﻿" + rows.join("\n"), `钱包明细_${maskPhone(phone || "user")}_${Date.now()}.csv`, "text/csv;charset=utf-8");
+  };
+
+  const exportWalletJSON = () => {
+    const data = {
+      phone: maskPhone(phone || ""),
+      exportedAt: new Date().toISOString(),
+      balance: wallet.balance,
+      entries: wallet.entries,
+      withdrawals: wallet.withdrawals,
+    };
+    downloadFile(JSON.stringify(data, null, 2), `钱包明细_${maskPhone(phone || "user")}_${Date.now()}.json`, "application/json");
+  };
 
   // 我推荐的人数（推荐人是我任一角色的成员数）
   const myRoleIds = userRoles.map(r => r.id);
@@ -356,23 +415,89 @@ const MyPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-3xl font-bold text-green-600">¥{wallet.balance.toLocaleString()}</div>
-              <div className="text-xs text-gray-400 mt-1">累计到账（来自 W3 合约自动结算）</div>
+              <div className="text-xs text-gray-400 mt-1">可用余额（来自 W3 合约自动结算）</div>
             </div>
             <div className="text-right text-xs text-gray-400">
               <p>{wallet.entries.length} 笔结算</p>
+              {wallet.withdrawals.length > 0 && <p>{wallet.withdrawals.length} 笔提现</p>}
             </div>
           </div>
+
+          {/* 操作按钮：提现 / 导出 */}
+          <div className="flex gap-2 mt-4">
+            <button onClick={() => { setShowWithdraw(v => !v); setWithdrawMsg(""); }}
+              className="flex-1 bg-green-600 text-white text-sm font-medium py-2 rounded-xl hover:bg-green-700 transition-colors">
+              💸 提现
+            </button>
+            <button onClick={exportWalletCSV}
+              className="flex-1 bg-gray-100 text-gray-700 text-sm font-medium py-2 rounded-xl hover:bg-gray-200 transition-colors">
+              ⬇️ CSV
+            </button>
+            <button onClick={exportWalletJSON}
+              className="flex-1 bg-gray-100 text-gray-700 text-sm font-medium py-2 rounded-xl hover:bg-gray-200 transition-colors">
+              ⬇️ JSON
+            </button>
+          </div>
+
+          {/* 提现表单 */}
+          {showWithdraw && (
+            <div className="mt-3 p-3 bg-gray-50 rounded-xl space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500 w-10">金额</span>
+                <input type="number" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)}
+                  placeholder={`最多 ¥${wallet.balance.toLocaleString()}`}
+                  className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-green-400" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500 w-10">方式</span>
+                <select value={withdrawMethod} onChange={e => setWithdrawMethod(e.target.value)}
+                  className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-green-400 bg-white">
+                  <option value="微信">微信</option>
+                  <option value="支付宝">支付宝</option>
+                  <option value="银行卡">银行卡</option>
+                </select>
+              </div>
+              {withdrawMsg && <p className="text-xs text-red-500">{withdrawMsg}</p>}
+              <div className="flex gap-2">
+                <button onClick={handleWithdraw}
+                  className="flex-1 bg-green-600 text-white text-sm py-1.5 rounded-lg hover:bg-green-700 transition-colors">确认提现</button>
+                <button onClick={() => { setShowWithdraw(false); setWithdrawMsg(""); }}
+                  className="flex-1 bg-white text-gray-500 text-sm py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">取消</button>
+              </div>
+            </div>
+          )}
+
+          {/* 结算明细（最近 6 笔） */}
           {wallet.entries.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-100 space-y-1 max-h-44 overflow-y-auto">
+              <p className="text-xs text-gray-400 mb-1">结算到账（最近 6 笔）</p>
               {[...wallet.entries].sort((a, b) => b.timestamp - a.timestamp).slice(0, 6).map(e => (
                 <div key={e.id} className="flex items-center justify-between text-sm py-0.5">
-                  <span>{ROLE_LABELS[e.role]?.icon} {e.roleName}</span>
+                  <span>{ROLE_LABELS[e.role]?.icon} {e.roleName}<span className="text-[10px] text-gray-300 ml-1">#{e.blockNumber}</span></span>
                   <span className="font-medium text-gray-700">+¥{e.amount.toLocaleString()}</span>
                 </div>
               ))}
             </div>
           )}
-          <p className="text-[11px] text-gray-400 mt-2">💡 去产品市场下单并完成支付，分账将自动进入你的钱包</p>
+
+          {/* 提现记录 */}
+          {wallet.withdrawals.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-1 max-h-32 overflow-y-auto">
+              <p className="text-xs text-gray-400 mb-1">提现记录</p>
+              {[...wallet.withdrawals].sort((a, b) => b.requestedAt - a.requestedAt).map(w => (
+                <div key={w.id} className="flex items-center justify-between text-sm py-0.5">
+                  <span>💸 {w.method}{" "}
+                    <span className={`text-[10px] px-1 rounded-full ${w.status === "done" ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"}`}>
+                      {w.status === "done" ? "已到账" : "处理中"}
+                    </span>
+                  </span>
+                  <span className="font-medium text-gray-700">-¥{w.amount.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <p className="text-[11px] text-gray-400 mt-2">💡 去产品市场下单并完成支付，分账将自动进入你的钱包；提现为 DEMO 演示。</p>
         </div>
 
         {/* 功能菜单 */}
