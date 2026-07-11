@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>融智桥 DEMO 原型（演示）</title>
+<style>
+  :root{
+    --brand:#0e7c86; --brand-d:#0a5a62; --brand-l:#e6f4f5;
+    --warm:#f0883a; --warm-l:#fdeee2;
+    --ink:#1f2933; --sub:#6b7785; --line:#e7ebef; --bg:#f3f5f7;
+    --ok:#1f9d6b; --warn:#d9822b; --danger:#e05656; --chip:#eef2f5;
+    --radius:14px; --shadow:0 2px 10px rgba(15,40,50,.08);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:#cdd5db;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink)}
+  body{display:flex;justify-content:center;min-height:100vh}
+  /* 手机壳 */
+  .phone{width:100%;max-width:430px;min-height:100vh;background:var(--bg);display:flex;flex-direction:column;position:relative;box-shadow:0 0 40px rgba(0,0,0,.18)}
+  /* 顶部栏 */
+  .topbar{background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#fff;padding:14px 16px 12px;position:sticky;top:0;z-index:20}
+  .topbar .t1{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:16px}
+  .topbar .badge{background:rgba(255,255,255,.22);font-size:11px;padding:2px 8px;border-radius:20px}
+  .topbar .t2{font-size:11px;opacity:.85;margin-top:3px}
+  /* 角色切换 */
+  .roles{display:flex;gap:6px;margin-top:10px;overflow-x:auto;padding-bottom:2px}
+  .role{flex:0 0 auto;background:rgba(255,255,255,.16);color:#fff;border:none;font-size:12px;padding:6px 12px;border-radius:20px;cursor:pointer;white-space:nowrap}
+  .role.active{background:#fff;color:var(--brand);font-weight:700}
+  /* 到期横幅 */
+  .expiry{background:var(--warm-l);color:var(--warm);font-size:12px;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f6d9c2}
+  .expiry button{background:var(--warm);color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer}
+  /* 视图区 */
+  .view{flex:1;overflow-y:auto;padding:14px 14px 90px}
+  .card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+  .card h3{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:6px}
+  .muted{color:var(--sub);font-size:12px}
+  .tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:6px;background:var(--chip);color:var(--sub);margin-left:6px}
+  .tag.demo{background:var(--warm-l);color:var(--warm)}
+  .tag.lim{background:#e7f0ff;color:#3a6ea5}
+  /* 底部 tab */
+  .tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#fff;border-top:1px solid var(--line);display:flex;z-index:30}
+  .tab{flex:1;text-align:center;padding:8px 0 10px;font-size:11px;color:var(--sub);cursor:pointer}
+  .tab.active{color:var(--brand);font-weight:700}
+  .tab .ic{font-size:20px;display:block;margin-bottom:2px}
+  /* 按钮 */
+  .btn{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:14px;width:100%;cursor:pointer;margin-top:8px}
+  .btn.warm{background:var(--warm)} .btn.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+  .btn:disabled{background:#c7d0d6;cursor:not-allowed}
+  /* 表单 */
+  .field{margin-bottom:10px}
+  .field label{font-size:12px;color:var(--sub);display:block;margin-bottom:4px}
+  .field input,.field textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px;font-size:14px;font-family:inherit;background:#fafbfc}
+  .field textarea{resize:vertical;min-height:60px}
+  /* 进度步骤 */
+  .steps{display:flex;gap:4px;margin:6px 0 12px}
+  .step{flex:1;height:5px;border-radius:4px;background:var(--line)}
+  .step.on{background:var(--brand)}
+  /* 规则卡 */
+  .rule{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;font-size:13px}
+  .rule.sel{border-color:var(--brand);background:var(--brand-l)}
+  .rule .ck{width:18px;height:18px;border-radius:5px;border:1px solid var(--line);flex:0 0 auto;text-align:center;line-height:18px;font-size:12px}
+  .rule.sel .ck{background:var(--brand);color:#fff;border-color:var(--brand)}
+  /* 聊天 */
+  .msg{display:flex;margin-bottom:10px;gap:8px}
+  .msg .av{width:30px;height:30px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px}
+  .msg .b{background:#fff;border-radius:10px;padding:8px 10px;font-size:13px;max-width:78%;box-shadow:var(--shadow)}
+  .msg.me{flex-direction:row-reverse}
+  .msg.me .b{background:var(--brand-l)}
+  .who-expert{background:var(--brand)} .who-ai{background:var(--warm)} .who-ent{background:#5b8def} .who-plat{background:#8a6fc4}
+  .chat-input{display:flex;gap:6px;position:sticky;bottom:0}
+  .chat-input input{flex:1;border:1px solid var(--line);border-radius:20px;padding:9px 14px;font-size:13px}
+  /* 看板 */
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .stat{background:#fff;border-radius:12px;padding:12px;box-shadow:var(--shadow)}
+  .stat .n{font-size:22px;font-weight:800;color:var(--brand)}
+  .stat .l{font-size:11px;color:var(--sub);margin-top:2px}
+  .stat .d{font-size:11px;margin-top:4px}
+  .up{color:var(--ok)} .down{color:var(--danger)}
+  /* 弹层 */
+  .mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:none;align-items:center;justify-content:center;padding:20px}
+  .mask.show{display:flex}
+  .sheet{background:#fff;border-radius:16px;padding:18px;width:100%;max-width:380px;max-height:84vh;overflow-y:auto}
+  .sheet h3{margin:0 0 12px}
+  .wm{position:relative;overflow:hidden}
+  .wm::after{content:"融智桥·DEMO·钱包0x9F..3A·签署方:企业代表";position:absolute;top:8px;right:8px;font-size:9px;color:rgba(224,86,86,.45);transform:rotate(-12deg);pointer-events:none}
+  .close{float:right;color:var(--sub);font-size:20px;cursor:pointer;line-height:1}
+  /* 分账动画 */
+  .flow{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:10px 0}
+  .node{padding:8px 12px;border-radius:10px;background:var(--chip);font-size:12px;border:1px solid var(--line)}
+  .node.ok{background:var(--brand-l);border-color:var(--brand);color:var(--brand-d)}
+  .arrow{color:var(--sub)}
+  .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(31,41,51,.92);color:#fff;padding:9px 16px;border-radius:20px;font-size:13px;z-index:60;opacity:0;transition:.25s;pointer-events:none}
+  .toast.show{opacity:1}
+  .kv{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line)}
+  .seg{display:flex;background:var(--chip);border-radius:10px;padding:3px;gap:3px}
+  .seg button{flex:1;border:none;background:transparent;padding:8px;border-radius:8px;font-size:12px;color:var(--sub);cursor:pointer}
+  .seg button.on{background:#fff;color:var(--brand);font-weight:700;box-shadow:var(--shadow)}
+  .hint{font-size:11px;color:var(--warn);background:var(--warm-l);padding:7px 10px;border-radius:8px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="topbar">
+    <div class="t1"><span>融智桥 · DEMO 原型</span><span class="badge">演示数据</span></div>
+    <div class="t2">专家 + AI 人才 + 中小微企业 · 可信协作平台（功能开放度 ≤50%）</div>
+    <div class="roles" id="roles"></div>
+  </div>
+  <div class="expiry" id="expiry"></div>
+  <div class="view" id="view"></div>
+  <div class="tabbar" id="tabbar"></div>
+</div>
+
+<div class="mask" id="mask"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ 状态 ============ */
+const S = {
+  role:'enterprise',                         // expert | ai | enterprise | platform
+  view:'home',
+  step:0,                                   // 场景闯关步骤 0..4
+  expiry:14,                                // DEMO 失效天数
+  profile:{name:'',phone:'',wechat:'',title:'',intro:''},
+  joined:false,
+  points:0,                                 // 积分（未入驻前0；入驻+10）
+  recommended:[],                           // 已推荐成员（去重）
+  nda:false,
+  settled:false,
+  rules:{cap:false,seq:false,change:false,lead:false}, // 专家定义的排产规则
+  scenario:{
+    pain:'订单波动大、排产靠老师傅经验、交期经常延误',
+    draft:'排产草案 A：设备#1 优先完成订单 D-2207（交期红线 7/15）；工序 #2→#5 顺排；换型并入夜班',
+    risk:'高风险订单：D-2207（延误风险 3 天）、D-2210（物料缺料）',
+    delayBefore:6, delayAfter:1
+  },
+  stats:{experts:128, enterprises:64, ai:42, products:37, demos:21, day:8.6, week:51.2, month:214.8, year:1820.5}
+};
+
+const ROLES={
+  expert:{name:'35+ 行业专家',ic:'🧓',cls:'who-expert'},
+  ai:{name:'AI 技术人才',ic:'🤖',cls:'who-ai'},
+  enterprise:{name:'中小微企业代表',ic:'🏭',cls:'who-ent'},
+  platform:{name:'平台运营方',ic:'🛡️',cls:'who-plat'}
+};
+const ROLE_ORDER=['expert','ai','enterprise','platform'];
+
+/* ============ 工具 ============ */
+const $=id=>document.getElementById(id);
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
+function fmt(n){return (n%1===0)?n.toLocaleString():n.toLocaleString(undefined,{maximumFractionDigits:1});}
+
+/* ============ 顶部角色 ============ */
+function renderRoles(){
+  $('roles').innerHTML=ROLE_ORDER.map(r=>
+    `<button class="role ${S.role===r?'active':''}" onclick="setRole('${r}')">${ROLES[r].ic} ${ROLES[r].name}</button>`
+  ).join('');
+}
+function setRole(r){S.role=r;renderAll();}
+
+/* ============ 到期横幅 ============ */
+function renderExpiry(){
+  $('expiry').innerHTML=`<span>⏳ DEMO 剩余 <b>${S.expiry}</b> 天（到期自动失效；演示数据）</span>
+    <button onclick="renew()">续期 +14 天</button>`;
+}
+function renew(){S.expiry+=14;toast('已续期，失效期延长 14 天');renderExpiry();}
+
+/* ============ 底部 tab ============ */
+function renderTabs(){
+  const tabs=[['home','🎮','闯关'],['chat','💬','交流'],['dashboard','📊','看板'],['mine','👤','我的']];
+  $('tabbar').innerHTML=tabs.map(t=>
+    `<div class="tab ${S.view===t[0]?'active':''}" onclick="go('${t[0]}')"><span class="ic">${t[1]}</span>${t[2]}</div>`
+  ).join('');
+}
+function go(v){S.view=v;renderView();renderTabs();}
+
+/* ============ 视图路由 ============ */
+function renderAll(){renderRoles();renderExpiry();renderTabs();renderView();}
+function renderView(){const v=$('view');
+  if(S.view==='home')v.innerHTML=viewHome();
+  else if(S.view==='chat')v.innerHTML=viewChat();
+  else if(S.view==='dashboard')v.innerHTML=viewDash();
+  else v.innerHTML=viewMine();
+}
+
+/* ============ 首页：制造业 DEMO 闯关 ============ */
+function viewHome(){
+  const titles=['① 企业提出痛点','② 专家诊断（定规则）','③ AI 人才实现（配 Agent）','④ 企业验收（游戏化审阅）','⑤ 联盟链 + 法币 自动分账'];
+  const steps=`<div class="steps">${[0,1,2,3,4].map(i=>`<div class="step ${i<=S.step?'on':''}"></div>`).join('')}</div>`;
+  let body='';
+  if(S.step===0){
+    body=`<div class="card wm">
+      <h3>制造业 DEMO：生产排产与交期风险预警 <span class="tag demo">演示</span><span class="tag lim">功能≤50%</span></h3>
+      <p class="muted">小型制造工厂痛点（演示数据）</p>
+      <div class="field"><label>企业代表描述痛点</label>
+        <textarea id="pain">${S.scenario.pain}</textarea></div>
+      <button class="btn" onclick="nextStep()">确认痛点，进入专家诊断 →</button>
+    </div>`;
+  }else if(S.step===1){
+    body=`<div class="card">
+      <h3>② 专家诊断：定义排产约束 <span class="muted">（点选规则卡）</span></h3>
+      ${ruleCard('cap','设备产能上限','限定单设备日最大工时')}
+      ${ruleCard('seq','工序先后顺序','强制 #2→#5 顺排')}
+      ${ruleCard('change','换型时间并入夜班','降低白班换型损耗')}
+      ${ruleCard('lead','交期红线','标红超期订单')}
+      <button class="btn" onclick="nextStep()" ${Object.values(S.rules).some(x=>x)?'':'disabled'}>提交规则，交由 AI 人才实现 →</button>
+    </div>`;
+  }else if(S.step===2){
+    body=`<div class="card wm">
+      <h3>③ AI 人才实现：配置排产预警 Agent <span class="tag demo">演示</span></h3>
+      <div class="kv"><span>输入（脱敏订单）</span><span>12 条 / 演示</span></div>
+      <div class="kv"><span>排产草案</span><span style="max-width:60%;text-align:right">${S.scenario.draft}</span></div>
+      <div class="kv"><span>高风险预警</span><span style="max-width:60%;text-align:right;color:var(--danger)">${S.scenario.risk}</span></div>
+      <div class="hint">核心功能（实际排产引擎）仅开放 20%，其余为演示占位。</div>
+      <button class="btn warm" onclick="nextStep()">生成草案，提交企业验收 →</button>
+    </div>`;
+  }else if(S.step===3){
+    body=`<div class="card">
+      <h3>④ 企业验收：游戏化审阅 <span class="muted">（点选批准 / 打回）</span></h3>
+      <div class="kv"><span>延误天数（优化前）</span><span class="down">${S.scenario.delayBefore} 天</span></div>
+      <div class="kv"><span>延误天数（优化后·演示）</span><span class="up">${S.scenario.delayAfter} 天</span></div>
+      <div class="rule" onclick="approve()"><div class="ck">✓</div> 批准该排产草案并触发里程碑分账</div>
+      <div class="rule" onclick="toast('已打回，AI 人才将收到修改通知（演示）')"><div class="ck">↺</div> 打回，要求调整工序顺序</div>
+    </div>`;
+  }else{
+    body=`<div class="card">
+      <h3>⑤ 联盟链 + 法币 自动分账 <span class="tag demo">演示</span></h3>
+      <p class="muted">里程碑达成 → 智能合约按 2-of-3 多签触发 → 人民币法币结算（非公链代币）</p>
+      <div class="flow">
+        <div class="node ${S.settled?'ok':''}">专家签章</div><span class="arrow">→</span>
+        <div class="node ${S.settled?'ok':''}">企业签章</div><span class="arrow">→</span>
+        <div class="node ${S.settled?'ok':''}">平台仲裁</div><span class="arrow">→</span>
+        <div class="node ${S.settled?'ok':''}">法币到账</div>
+      </div>
+      <div class="kv"><span>专家（35+）分得</span><span>¥1,800 · 演示</span></div>
+      <div class="kv"><span>AI 人才分得</span><span>¥1,200 · 演示</span></div>
+      <div class="kv"><span>平台 take rate（10–20%）+ 链上清算费（1–3%）</span><span>¥500</span></div>
+      <div class="hint">对外统一表述为「透明智能分账协议」；资金经持牌托管，合规（币链分离）。</div>
+      <button class="btn" ${S.settled?'disabled':''} onclick="doSettle()">${S.settled?'✅ 已分账（演示）':'触发智能合约分账'}</button>
+      <button class="btn ghost" onclick="resetDemo()">重置 DEMO 闯关</button>
+    </div>`;
+  }
+  return `<div class="card"><div style="font-size:13px;font-weight:700">${titles[S.step]}</div>${steps}</div>`+body;
+}
+function ruleCard(k,title,desc){
+  return `<div class="rule ${S.rules[k]?'sel':''}" onclick="toggleRule('${k}')"><div class="ck">${S.rules[k]?'✓':''}</div><div><b>${title}</b><br><span class="muted">${desc}</span></div></div>`;
+}
+function toggleRule(k){S.rules[k]=!S.rules[k];renderView();}
+function nextStep(){if(S.step===0)S.scenario.pain=$('pain').value||S.scenario.pain;S.step++;renderView();}
+function approve(){S.step++;renderView();toast('已批准，进入分账环节');}
+function doSettle(){S.settled=true;S.stats.day+=3.0;S.stats.month+=3.0;S.stats.year+=3.0;renderView();toast('联盟链+法币分账完成（演示）');}
+function resetDemo(){S.step=0;S.settled=false;S.rules={cap:false,seq:false,change:false,lead:false};renderView();toast('DEMO 已重置');}
+
+/* ============ 交流（三方 IM + 进度） ============ */
+const CHAT=[
+  {r:'enterprise',t:'老师傅经验排产总延误，想试 AI 方案（演示）'},
+  {r:'expert',t:'我先定规则：设备产能、工序顺序、交期红线'},
+  {r:'ai',t:'收到，已配排产预警 Agent，请企业代表审阅草案'},
+  {r:'enterprise',t:'延误从 6 天降到 1 天？点【批准】触发分账'},
+  {r:'platform',t:'NDA 已签，全程数字水印保护（演示）'}
+];
+function viewChat(){
+  const msgs=CHAT.map(m=>`<div class="msg ${m.r===S.role?'me':''}">
+    <div class="av ${ROLES[m.r].cls}">${ROLES[m.r].ic}</div>
+    <div class="b">${m.t}<div class="muted" style="font-size:10px;margin-top:3px">${ROLES[m.r].name}</div></div></div>`).join('');
+  return `<div class="card"><h3>三方实时交流 + 进度留痕 <span class="tag demo">演示</span></h3>
+    <p class="muted">专家 / AI 人才 / 企业代表 实时反馈进展（当前视角：${ROLES[S.role].name}）</p></div>
+    <div id="chatbox">${msgs}</div>
+    <div class="chat-input"><input id="ci" placeholder="输入消息（演示，不发送真实数据）"/>
+      <button class="btn" style="width:auto;margin:0;padding:0 16px" onclick="sendMsg()">发送</button></div>`;
+}
+function sendMsg(){const v=$('ci').value.trim();if(!v)return;
+  CHAT.push({r:S.role,t:v});$('ci').value='';renderView();
+  const box=$('chatbox');box.scrollTop=box.scrollHeight;}
+
+/* ============ 数据看板 ============ */
+function viewDash(){
+  const g=S.stats;
+  const card=(n,l,d)=>`<div class="stat"><div class="n">${n}</div><div class="l">${l}</div>${d?`<div class="d ${d.includes('+')?'up':'down'}">${d}</div>`:''}</div>`;
+  return `<div class="card"><h3>平台实时数据看板 <span class="tag demo">演示</span></h3>
+    <p class="muted">平台方视角；运营满一年后提供各环比指标（本 DEMO 以占位环比示意）</p></div>
+    <div class="stat-grid">
+      ${card(g.experts,'专家人数','+12 环比')}
+      ${card(g.enterprises,'企业人数','+5 环比')}
+      ${card(g.ai,'AI 专家人数','+8 环比')}
+      ${card(g.products,'产品个数','+3 环比')}
+      ${card(g.demos,'DEMO 产品个数','+2 环比')}
+      ${card(fmt(g.day)+'万','日交易量','+6.2%')}
+      ${card(fmt(g.week)+'万','周交易量','+4.1%')}
+      ${card(fmt(g.month)+'万','月交易量','+9.7%')}
+      ${card(fmt(g.year)+'万','年交易量','（满一年显示环比）')}
+      ${card('—','环比指标','运营满 1 年后开放')}
+    </div>`;
+}
+
+/* ============ 我的（名片 / 积分 / NDA / 收费） ============ */
+function viewMine(){
+  const p=S.profile;
+  const fields=`
+    <div class="field"><label>姓名 / 昵称</label><input id="f_name" value="${p.name}" placeholder="如：王工"/></div>
+    <div class="field"><label>电话</label><input id="f_phone" value="${p.phone}" placeholder="138****"/></div>
+    <div class="field"><label>微信</label><input id="f_wx" value="${p.wechat}" placeholder="wxid_***"/></div>
+    <div class="field"><label>职务</label><input id="f_title" value="${p.title}" placeholder="如：前生产总监"/></div>
+    <div class="field"><label>个人介绍（重点）</label><textarea id="f_intro" placeholder="行业年限、擅长领域、代表案例、可交付 AI 方案方向">${p.intro}</textarea></div>`;
+  const recList=S.recommended.length?S.recommended.map((m,i)=>`<div class="kv"><span>已推荐 #${i+1}</span><span>+2 分 · ${m}</span></div>`).join(''):`<p class="muted">暂无推荐记录</p>`;
+  return `
+  <div class="card wm"><h3>我的名片 <span class="tag demo">演示</span></h3>
+    ${fields}
+    <button class="btn" onclick="saveProfile()">${S.joined?'保存名片':'入驻并生成名片（+10 分）'}</button>
+    ${S.joined?'<div class="hint">已入驻 · 当前积分 <b>'+S.points+'</b> 分</div>':''}
+  </div>
+  <div class="card"><h3>推荐裂变 <span class="muted">新成员+10 / 推荐+2 / 不重复</span></h3>
+    <div class="field"><label>推荐成员（微信/手机）</label><input id="rec" placeholder="输入被推荐人标识"/></div>
+    <button class="btn warm" onclick="recommend()">推荐（+2 分，去重）</button>
+    ${recList}
+  </div>
+  <div class="card"><h3>保密协议 NDA</h3>
+    <p class="muted">参与 DEMO 须签署；含动态数字水印（钱包公钥+注册信息），到期撤销 API Key</p>
+    ${S.nda?'<div class="hint" style="background:#e7f6ee;color:#1f9d6b">✅ 已签署（演示）</div>':'<button class="btn ghost" onclick="openNDA()">在线签署 NDA</button>'}
+  </div>
+  <div class="card"><h3>收费与授权模式 <span class="muted">最终产品三选一</span></h3>
+    <div class="seg" id="lic">
+      <button class="on" onclick="setLic(this,'按年 LICENSE')">按年 LICENSE</button>
+      <button onclick="setLic(this,'永久授权')">永久</button>
+      <button onclick="setLic(this,'到日期失效')">到日期失效</button>
+    </div>
+    <p class="muted" style="margin-top:8px">DEMO 阶段仅展示，不产生真实订单。</p>
+  </div>`;
+}
+function saveProfile(){
+  S.profile={name:$('f_name').value,phone:$('f_phone').value,wechat:$('f_wx').value,title:$('f_title').value,intro:$('f_intro').value};
+  if(!S.joined){S.joined=true;S.points+=10;toast('已入驻，积分 +10');}
+  else toast('名片已保存');
+  renderView();
+}
+function recommend(){
+  const v=$('rec').value.trim();if(!v){toast('请输入被推荐人标识');return;}
+  if(S.recommended.includes(v)){toast('该成员已推荐，不重复计分');return;}
+  S.recommended.push(v);S.points+=2;toast('推荐成功，积分 +2');renderView();
+}
+function setLic(b,t){[...b.parentNode.children].forEach(c=>c.classList.remove('on'));b.classList.add('on');toast('已选择：'+t);}
+
+/* ============ NDA 弹层 ============ */
+function openNDA(){
+  $('sheet').innerHTML=`<span class="close" onclick="closeMask()">×</span>
+    <h3>保密协议（NDA）在线签署 <span class="tag demo">演示</span></h3>
+    <div class="wm" style="border:1px solid var(--line);border-radius:10px;padding:12px;background:#fafbfc">
+      <p style="font-size:13px;line-height:1.7">甲方（平台/参与方）与乙方就「生产排产与交期预警 DEMO」中所涉业务逻辑、脱敏数据与方案草案，约定保密义务。任何一方不得截屏外传或逆向提取核心 AI 逻辑；DEMO 到期后台一键撤销 API Key。</p>
+      <p class="muted" style="font-size:11px">数字水印：含签署方钱包公钥与注册信息（防泄露溯源）</p>
+    </div>
+    <button class="btn" onclick="signNDA()">✍️ 我已知悉并签署（演示）</button>`;
+  $('mask').classList.add('show');
+}
+function signNDA(){S.nda=true;closeMask();toast('NDA 已签署（演示）');renderView();}
+function closeMask(){$('mask').classList.remove('show');}
+$('mask').addEventListener('click',e=>{if(e.target===$('mask'))closeMask();});
+
+/* ============ 启动 ============ */
+renderAll();
+</script>
+</body>
+</html>
