@@ -9,18 +9,25 @@ import {
   desensitizeText, getDesensitizeRulesByOwner,
 } from "../data/store";
 import { summarizeFile, verifyApiKey, getApiKey, setApiKey } from "../services/openai";
+import { useT } from "../i18n";
 
 // 文件夹类型 - 与 FileStatus 对应
 type FolderTab = FileStatus;
 
-const FOLDER_TABS: Array<{ key: FolderTab; label: string; icon: string; desc: string }> = [
-  { key: "uploaded", label: "待处理", icon: "📤", desc: "已上传，等待AI总结" },
-  { key: "summarized", label: "已总结", icon: "🤖", desc: "AI已完成总结" },
-  { key: "reviewed", label: "已审核", icon: "✅", desc: "人工审核完成" },
+const FOLDER_TABS: Array<{ key: FolderTab; icon: string }> = [
+  { key: "uploaded", icon: "📤" },
+  { key: "summarized", icon: "🤖" },
+  { key: "reviewed", icon: "✅" },
 ];
 
 const FilesPage: React.FC = () => {
   const navigate = useNavigate();
+  const t = useT();
+  const folderMeta: Record<FolderTab, { label: string; desc: string }> = {
+    uploaded: { label: t("file.tabUploaded", "待处理"), desc: t("file.tabUploadedDesc", "已上传，等待AI总结") },
+    summarized: { label: t("file.tabSummarized", "已总结"), desc: t("file.tabSummarizedDesc", "AI已完成总结") },
+    reviewed: { label: t("file.tabReviewed", "已审核"), desc: t("file.tabReviewedDesc", "人工审核完成") },
+  };
   const [currentRole, setCurrentRole] = useState(getCurrentRole());
   const isPlatform = currentRole?.role === "platform";
   const [allFiles, setAllFiles] = useState<UploadedFile[]>([]);
@@ -76,7 +83,7 @@ const FilesPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file || !currentRole) return;
 
-    if (file.size > 5 * 1024 * 1024) { alert("DEMO限制：文件不超过5MB"); return; }
+    if (file.size > 5 * 1024 * 1024) { alert(t("file.sizeLimit", "DEMO限制：文件不超过5MB")); return; }
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -136,7 +143,7 @@ const FilesPage: React.FC = () => {
   const handleAISummary = async (file: UploadedFile) => {
     if (!getApiKey()) {
       setShowApiSettings(true);
-      alert("请先配置 OpenAI API Key");
+      alert(t("file.cfgApiKeyAlert", "请先配置 OpenAI API Key"));
       return;
     }
 
@@ -182,7 +189,7 @@ const FilesPage: React.FC = () => {
       done.summaryFileId = summaryFile.id;
       saveFile(done);
     } catch (err: any) {
-      alert(`AI总结失败：${err.message}\n\n请检查 API Key 是否正确，或稍后点击「失败」旁的重试按钮再次尝试。`);
+      alert(t("file.aiFail", "AI总结失败：{err}\n\n请检查 API Key 是否正确，或稍后点击「失败」旁的重试按钮再次尝试。", { err: err.message }));
       const failed: UploadedFile = { ...updated, status: "uploaded", aiSummaryStatus: "error" };
       saveFile(failed);
     }
@@ -235,10 +242,10 @@ const FilesPage: React.FC = () => {
 
   const handleDelete = (file: UploadedFile) => {
     if (!canDeleteFile(file, currentRole)) {
-      alert("该文件已进入总结流程，无法删除");
+      alert(t("file.cannotDelete", "该文件已进入总结流程，无法删除"));
       return;
     }
-    if (!window.confirm(`确定删除文件「${file.name}」？`)) return;
+    if (!window.confirm(t("file.confirmDelete", "确定删除文件「{name}」？", { name: file.name }))) return;
     deleteFile(file.id);
     refresh();
   };
@@ -247,16 +254,16 @@ const FilesPage: React.FC = () => {
     setApiKey(apiKeyInput.trim());
     setShowApiSettings(false);
     if (apiKeyInput.trim()) {
-      alert("API Key 已保存");
+      alert(t("file.apiKeySaved", "API Key 已保存"));
     }
   };
 
   if (!currentRole) {
     return (
-      <PageContainer title="文件管理">
+      <PageContainer title={t("file.title", "文件管理")}>
         <div className="text-center py-16 text-gray-500">
-          请先入驻角色
-          <button onClick={() => navigate("/onboarding")} className="text-primary-600 ml-2 underline">前往入驻</button>
+          {t("file.pleaseOnboard", "请先入驻角色")}
+          <button onClick={() => navigate("/onboarding")} className="text-primary-600 ml-2 underline">{t("file.goOnboard", "前往入驻")}</button>
         </div>
       </PageContainer>
     );
@@ -273,7 +280,7 @@ const FilesPage: React.FC = () => {
   const roleMeta = ROLE_LABELS[currentRole?.role || "expert"];
 
   return (
-    <PageContainer title="文件管理">
+    <PageContainer title={t("file.title", "文件管理")}>
       <div className="max-w-5xl mx-auto">
         {/* 当前角色标识 */}
         <div className="bg-white rounded-2xl shadow-sm p-3 border border-gray-100 mb-4 flex items-center gap-2">
@@ -282,7 +289,7 @@ const FilesPage: React.FC = () => {
           <span className="text-gray-400 text-xs">·</span>
           <span className="text-gray-500 text-xs">{currentRole?.name}</span>
           <span className="text-gray-300 text-xs">|</span>
-          <span className="text-gray-400 text-xs">权限：{isPlatform ? "查看+总结+审核" : "查看自己的文件"}</span>
+          <span className="text-gray-400 text-xs">{t("file.perm", "权限：")}{isPlatform ? t("file.permFull", "查看+总结+审核") : t("file.permOwn", "查看自己的文件")}</span>
         </div>
 
         {/* 脱敏预览弹窗 */}
@@ -292,25 +299,25 @@ const FilesPage: React.FC = () => {
           return (
             <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
-                <h3 className="font-bold text-gray-800 mb-3">🔒 文件名脱敏预览</h3>
-                <p className="text-sm text-gray-500 mb-4">上传前请确认文件名脱敏结果：</p>
+                <h3 className="font-bold text-gray-800 mb-3">{t("file.desensitizePreview", "🔒 文件名脱敏预览")}</h3>
+                <p className="text-sm text-gray-500 mb-4">{t("file.desensitizeHint", "上传前请确认文件名脱敏结果：")}</p>
                 <div className="bg-gray-50 rounded-xl p-4 mb-4">
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-400">原始：</span>
+                    <span className="text-gray-400">{t("file.original", "原始：")}</span>
                     <span className="text-gray-700">{pendingUpload.file.name}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm mt-2">
-                    <span className="text-gray-400">脱敏后：</span>
+                    <span className="text-gray-400">{t("file.desensitized", "脱敏后：")}</span>
                     <span className="text-primary-700 font-medium">{previewName}</span>
                   </div>
                 </div>
                 <div className="text-xs text-gray-400 mb-4">
-                  当前脱敏规则：{rules.map(r => `${r.original}→${r.replacement}`).join("、") || "无"}
+                  {t("file.curRules", "当前脱敏规则：")}{rules.map(r => `${r.original}→${r.replacement}`).join("、") || t("file.none", "无")}
                 </div>
                 <div className="flex gap-3">
                   <button onClick={() => { setShowDesensitize(false); setPendingUpload(null); }}
                     className="flex-1 py-2 text-sm text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50">
-                    取消
+                    {t("my.cancel", "取消")}
                   </button>
                   <button onClick={() => {
                     const p = pendingUpload;
@@ -319,7 +326,7 @@ const FilesPage: React.FC = () => {
                     doUpload(previewName, p.file, p.content);
                   }}
                     className="flex-1 py-2 text-sm bg-primary-600 text-white rounded-xl hover:bg-primary-700 font-medium">
-                    确认上传（已脱敏）
+                    {t("file.confirmUpload", "确认上传（已脱敏）")}
                   </button>
                 </div>
               </div>
@@ -331,53 +338,53 @@ const FilesPage: React.FC = () => {
           {/* 环境检测提示 */}
           {apiReady === false && (
             <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-              <p className="text-xs text-amber-700">💡 AI 功能将通过本地代理调用腾讯混元 API。请确保已配置有效的 API Key。</p>
+              <p className="text-xs text-amber-700">{t("file.aiApiHint", "💡 AI 功能将通过本地代理调用腾讯混元 API。请确保已配置有效的 API Key。")}</p>
             </div>
           )}
 
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-gray-800 flex items-center gap-2">
-              📂 文件库
+              📂 {t("file.library", "文件库")}
               <span className="text-xs font-normal text-gray-400">
-                （{allFiles.length}个文件）
+                {t("file.fileCount", "（{n}个文件）", { n: allFiles.length })}
               </span>
               <DemoBadge />
             </h3>
             <div className="flex gap-2">
               <button onClick={() => setShowApiSettings(!showApiSettings)}
                 className="text-xs text-gray-500 hover:text-primary-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-primary-300 transition-all">
-                ⚙️ API设置
+                {t("file.apiSettings", "⚙️ API设置")}
               </button>
               <input ref={fileInputRef} type="file" onChange={handleUpload}
                 className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.gif,.mp3,.mp4,.avi,.wav" />
-              <Button onClick={() => fileInputRef.current?.click()} size="sm">📤 上传文件</Button>
+              <Button onClick={() => fileInputRef.current?.click()} size="sm">{t("file.upload", "📤 上传文件")}</Button>
             </div>
           </div>
 
           {/* API Key 设置 */}
           {showApiSettings && (
             <div className="mb-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
-              <p className="text-sm text-blue-700 mb-2">🔑 配置腾讯混元 API Key（<a href="https://console.cloud.tencent.com/hunyuan/start" target="_blank" rel="noopener noreferrer" className="underline">获取 Key</a>，仅本地存储）</p>
+              <p className="text-sm text-blue-700 mb-2">{t("file.cfgApiKey1", "🔑 配置腾讯混元 API Key（")}<a href="https://console.cloud.tencent.com/hunyuan/start" target="_blank" rel="noopener noreferrer" className="underline">{t("file.getApiKey", "获取 Key")}</a>{t("file.cfgApiKey2", "，仅本地存储）")}</p>
               <div className="flex gap-2">
                 <input type="password" value={apiKeyInput}
                   onChange={e => setApiKeyInput(e.target.value)}
-                  placeholder="输入腾讯混元 API Key..." className="flex-1 text-sm border border-blue-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-200" />
-                <Button onClick={handleSaveApiKey} size="sm">💾 保存</Button>
+                  placeholder={t("file.phApiKey", "输入腾讯混元 API Key...")} className="flex-1 text-sm border border-blue-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-200" />
+                <Button onClick={handleSaveApiKey} size="sm">{t("file.save", "💾 保存")}</Button>
                 <Button onClick={async () => {
-                  if (!apiKeyInput.trim()) { alert("请先输入 API Key"); return; }
+                  if (!apiKeyInput.trim()) { alert(t("file.enterApiKey", "请先输入 API Key")); return; }
                   const key = apiKeyInput.trim();
                   setApiKey(key);
                   try {
                     const data = await verifyApiKey(key);
                     if (data.valid) {
-                      alert(`✅ Key 验证成功！\n模型：${data.model || "hunyuan-turbos-latest"}\n提供商：腾讯混元`);
+                      alert(t("file.keyOk", "✅ Key 验证成功！\n模型：{model}\n提供商：腾讯混元", { model: data.model || "hunyuan-turbos-latest" }));
                     } else {
-                      alert(`❌ Key 验证失败：${data.error || "未知错误"}`);
+                      alert(t("file.keyFail", "❌ Key 验证失败：{err}", { err: data.error || t("file.unknown", "未知错误") }));
                     }
                   } catch (e: any) {
-                    alert("❌ 验证请求失败：" + e.message);
+                    alert(t("file.verifyFail", "❌ 验证请求失败：") + e.message);
                   }
-                }} variant="outline" size="sm">🔍 验证</Button>
+                }} variant="outline" size="sm">{t("file.verify", "🔍 验证")}</Button>
               </div>
             </div>
           )}
@@ -392,7 +399,7 @@ const FilesPage: React.FC = () => {
                     : "bg-white text-gray-600 border-gray-200 hover:border-primary-300"
                 }`}>
                 <span>{tab.icon}</span>
-                <span className="font-medium">{tab.label}</span>
+                <span className="font-medium">{folderMeta[tab.key].label}</span>
                 <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                   activeFolder === tab.key ? "bg-white/20" : "bg-gray-100"
                 }`}>
@@ -401,7 +408,7 @@ const FilesPage: React.FC = () => {
               </button>
             ))}
           </div>
-          <p className="text-xs text-gray-400">{FOLDER_TABS.find(t => t.key === activeFolder)?.desc}</p>
+          <p className="text-xs text-gray-400">{folderMeta[activeFolder].desc}</p>
 
           {/* 分类标签（仅平台方） */}
           {isPlatform && (
@@ -422,9 +429,9 @@ const FilesPage: React.FC = () => {
         {!isPlatform && allFiles.length === 0 && (
           <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
             <div className="text-5xl mb-4">📭</div>
-            <p className="text-gray-500 mb-2 font-medium">您还未上传过文件</p>
-            <p className="text-gray-400 text-sm mb-4">上传文件后可在此查看和管理</p>
-            <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm">📤 上传第一个文件</Button>
+            <p className="text-gray-500 mb-2 font-medium">{t("file.noFileYet", "您还未上传过文件")}</p>
+            <p className="text-gray-400 text-sm mb-4">{t("file.uploadHint", "上传文件后可在此查看和管理")}</p>
+            <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm">{t("file.uploadFirst", "📤 上传第一个文件")}</Button>
           </div>
         )}
 
@@ -434,8 +441,8 @@ const FilesPage: React.FC = () => {
             {/* 非平台角色的 AI 总结入口 */}
             {activeFolder === "uploaded" && displayedFiles.filter(f => f.aiSummaryStatus !== "processing").length > 0 && (
               <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-5 border border-purple-200 mb-4">
-                <h3 className="font-bold text-purple-800 mb-2">🤖 AI 文件总结</h3>
-                <p className="text-sm text-purple-600 mb-3">选择待处理文件，调用 AI 进行内容总结</p>
+                <h3 className="font-bold text-purple-800 mb-2">{t("file.aiSummaryTitle", "🤖 AI 文件总结")}</h3>
+                <p className="text-sm text-purple-600 mb-3">{t("file.aiSummaryHint", "选择待处理文件，调用 AI 进行内容总结")}</p>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {displayedFiles.filter(f => f.aiSummaryStatus !== "processing").map(f => (
                     <div key={f.id} className="flex items-center justify-between bg-white rounded-xl p-3 border border-purple-100">
@@ -446,7 +453,7 @@ const FilesPage: React.FC = () => {
                       </div>
                       <Button onClick={() => handleAISummary(f)} size="sm" variant="outline"
                         disabled={processingIds.has(f.id)}>
-                        {processingIds.has(f.id) ? "⏳ 处理中" : "🤖 AI总结"}
+                        {processingIds.has(f.id) ? t("file.processing", "⏳ 处理中") : t("file.aiSummarize", "🤖 AI总结")}
                       </Button>
                     </div>
                   ))}
@@ -454,13 +461,13 @@ const FilesPage: React.FC = () => {
               </div>
             )}
             {displayedFiles.filter(f => f.aiSummaryStatus === "processing").length > 0 && (
-              <div className="text-sm text-purple-600 mb-4 animate-pulse">⏳ AI正在总结中...</div>
+              <div className="text-sm text-purple-600 mb-4 animate-pulse">{t("file.aiSummarizing", "⏳ AI正在总结中...")}</div>
             )}
 
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">
-                📋 我的文件（共{allFiles.length}个）
+                {t("file.myFiles", "📋 我的文件（共{n}个）", { n: allFiles.length })}
               </span>
             </div>
             <div className="divide-y divide-gray-50">
@@ -489,25 +496,25 @@ const FilesPage: React.FC = () => {
                         {f.aiSummaryStatus === "error" && (
                           <button onClick={() => handleAISummary(f)}
                             className="text-xs text-red-600 hover:text-red-700 px-2 py-1">
-                            🔄 重试
+                            {t("file.retry", "🔄 重试")}
                           </button>
                         )}
                         {/* 展开查看总结 */}
                         {(f.aiSummary || f.humanEditedSummary || (f.linkedFrom && allFiles.find(of => of.id === f.linkedFrom)?.aiSummary)) && (
                           <button onClick={() => setEditingId(editingId === f.id ? null : f.id)}
                             className="text-xs text-gray-500 hover:text-primary-600 px-2 py-1">
-                            {editingId === f.id ? "收起" : "查看"}
+                            {editingId === f.id ? t("file.collapse", "收起") : t("file.view", "查看")}
                           </button>
                         )}
                         {/* 非平台角色：只能删除未总结的文件 */}
                         {canDeleteFile(f, currentRole) && (
                           <button onClick={() => handleDelete(f)}
                             className="text-xs text-red-400 hover:text-red-600 px-2 py-1">
-                            🗑️ 删除
+                            {t("file.delete", "🗑️ 删除")}
                           </button>
                         )}
                         {!canDeleteFile(f, currentRole) && (
-                          <span className="text-xs text-gray-300">已锁定</span>
+                          <span className="text-xs text-gray-300">{t("file.locked", "已锁定")}</span>
                         )}
                       </div>
                     </div>
@@ -539,16 +546,16 @@ const FilesPage: React.FC = () => {
                       <div className="mt-3 ml-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
                         {showAiSummary && (
                           <div>
-                            <h4 className="text-xs font-bold text-purple-700 mb-1">🤖 AI总结</h4>
+                            <h4 className="text-xs font-bold text-purple-700 mb-1">{t("file.aiSummaryHead", "🤖 AI总结")}</h4>
                             <pre className="text-xs text-gray-600 whitespace-pre-wrap bg-purple-50 p-3 rounded-lg max-h-40 overflow-y-auto">{showAiSummary}</pre>
                           </div>
                         )}
                         {!showAiSummary && !showReviewed && (
-                          <p className="text-xs text-gray-400">暂无总结内容</p>
+                          <p className="text-xs text-gray-400">{t("file.noSummary", "暂无总结内容")}</p>
                         )}
                         {showReviewed && (
                           <div className="mt-2">
-                            <h4 className="text-xs font-bold text-green-700 mb-1">✅ 已审核版本</h4>
+                            <h4 className="text-xs font-bold text-green-700 mb-1">{t("file.reviewedHead", "✅ 已审核版本")}</h4>
                             <pre className="text-xs text-gray-600 whitespace-pre-wrap bg-green-50 p-3 rounded-lg max-h-40 overflow-y-auto">{showReviewed}</pre>
                           </div>
                         )}
@@ -567,7 +574,7 @@ const FilesPage: React.FC = () => {
         {isPlatform && displayedFiles.length === 0 && (
           <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
             <div className="text-5xl mb-4">📭</div>
-            <p className="text-gray-400">暂无{FOLDER_TABS.find(t => t.key === activeFolder)?.label}文件</p>
+            <p className="text-gray-400">{t("file.noFileInFolder", "暂无{label}文件", { label: folderMeta[activeFolder].label })}</p>
           </div>
         )}
 
@@ -576,8 +583,8 @@ const FilesPage: React.FC = () => {
             {/* 平台方AI总结区域 */}
             {activeFolder === "uploaded" && (
               <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-5 border border-purple-200 mb-6">
-                <h3 className="font-bold text-purple-800 mb-2">🤖 平台方 · AI文件总结</h3>
-                <p className="text-sm text-purple-600 mb-3">选择待处理文件，调用AI进行内容总结</p>
+                <h3 className="font-bold text-purple-800 mb-2">{t("file.platformAiTitle", "🤖 平台方 · AI文件总结")}</h3>
+                <p className="text-sm text-purple-600 mb-3">{t("file.aiSummaryHint", "选择待处理文件，调用 AI 进行内容总结")}</p>
                 {displayedFiles.filter(f => f.aiSummaryStatus !== "processing").length > 0 && (
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {displayedFiles.filter(f => f.aiSummaryStatus !== "processing").map(f => (
@@ -590,7 +597,7 @@ const FilesPage: React.FC = () => {
                         </div>
                         <Button onClick={() => handleAISummary(f)} size="sm" variant="outline"
                           disabled={processingIds.has(f.id)}>
-                          {processingIds.has(f.id) ? "⏳ 处理中" : "🤖 AI总结"}
+                          {processingIds.has(f.id) ? t("file.processing", "⏳ 处理中") : t("file.aiSummarize", "🤖 AI总结")}
                         </Button>
                       </div>
                     ))}
@@ -605,8 +612,8 @@ const FilesPage: React.FC = () => {
             {/* 已总结文件夹 - 审核入口 */}
             {activeFolder === "summarized" && (
               <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-5 border border-blue-200 mb-6">
-                <h3 className="font-bold text-blue-800 mb-2">✏️ 人工审核</h3>
-                <p className="text-sm text-blue-600">对AI总结结果进行人工审核和修改</p>
+                <h3 className="font-bold text-blue-800 mb-2">{t("file.humanReview", "✏️ 人工审核")}</h3>
+                <p className="text-sm text-blue-600">{t("file.humanReviewHint", "对AI总结结果进行人工审核和修改")}</p>
               </div>
             )}
 
@@ -637,7 +644,7 @@ const FilesPage: React.FC = () => {
                               <span>{f.ownerName}</span>
                               <span>·</span>
                               <span>{new Date(f.createdAt).toLocaleDateString("zh-CN")}</span>
-                              {f.linkedFrom && <span className="text-amber-500">· 📋 归档副本</span>}
+                              {f.linkedFrom && <span className="text-amber-500">· {t("file.archiveCopy", "📋 归档副本")}</span>}
                             </div>
                           </div>
                         </div>
@@ -646,26 +653,26 @@ const FilesPage: React.FC = () => {
                           {(f.aiSummary || f.humanEditedSummary || (f.linkedFrom && allFiles.find(of => of.id === f.linkedFrom)?.aiSummary)) && (
                             <button onClick={() => setEditingId(editingId === f.id ? null : f.id)}
                               className="text-xs text-gray-500 hover:text-primary-600 px-2 py-1">
-                              {editingId === f.id ? "收起" : "查看"}
+                              {editingId === f.id ? t("file.collapse", "收起") : t("file.view", "查看")}
                             </button>
                           )}
                           {/* 失败重试 */}
                           {f.aiSummaryStatus === "error" && (
                             <button onClick={() => handleAISummary(f)}
                               className="text-xs text-red-600 hover:text-red-700 px-2 py-1">
-                              🔄 重试
+                              {t("file.retry", "🔄 重试")}
                             </button>
                           )}
                           {/* 已总结→审核按钮 */}
                           {f.status === "summarized" && f.aiSummary && editingId !== f.id && (
                             <button onClick={() => handleStartReview(f)}
                               className="text-xs text-blue-600 hover:text-blue-700 px-2 py-1">
-                              ✏️ 审核
+                              {t("file.review", "✏️ 审核")}
                             </button>
                           )}
                           {canDeleteFile(f, currentRole) && (
                             <button onClick={() => handleDelete(f)}
-                              className="text-xs text-red-400 hover:text-red-600 px-2 py-1">删除</button>
+                              className="text-xs text-red-400 hover:text-red-600 px-2 py-1">{t("file.deletePlain", "删除")}</button>
                           )}
                         </div>
                       </div>
@@ -698,27 +705,27 @@ const FilesPage: React.FC = () => {
                         <div className="mt-3 ml-9 p-4 bg-gray-50 rounded-xl border border-gray-200">
                           {showAiSummary && (
                             <div className="mb-3">
-                              <h4 className="text-xs font-bold text-purple-700 mb-1">🤖 AI总结</h4>
+                              <h4 className="text-xs font-bold text-purple-700 mb-1">{t("file.aiSummaryHead", "🤖 AI总结")}</h4>
                               <pre className="text-xs text-gray-600 whitespace-pre-wrap bg-purple-50 p-3 rounded-lg max-h-40 overflow-y-auto">{showAiSummary}</pre>
                             </div>
                           )}
                           {!showAiSummary && !showReviewed && (
-                            <p className="text-xs text-gray-400">暂无总结内容</p>
+                            <p className="text-xs text-gray-400">{t("file.noSummary", "暂无总结内容")}</p>
                           )}
                           {f.status === "summarized" && !f.linkedFrom && (
                             <div>
-                              <h4 className="text-xs font-bold text-blue-700 mb-1">✏️ 人工审核</h4>
+                              <h4 className="text-xs font-bold text-blue-700 mb-1">{t("file.humanReview", "✏️ 人工审核")}</h4>
                               <textarea value={editText} onChange={e => setEditText(e.target.value)}
                                 rows={5} className="w-full text-xs border border-gray-300 rounded-lg p-3 mb-2 focus:ring-2 focus:ring-primary-200 outline-none resize-none" />
                               <div className="flex gap-2">
-                                <Button onClick={() => handleSaveReview(f)} size="sm">💾 保存审核</Button>
-                                <Button onClick={() => setEditingId(null)} variant="secondary" size="sm">取消</Button>
+                                <Button onClick={() => handleSaveReview(f)} size="sm">{t("file.saveReview", "💾 保存审核")}</Button>
+                                <Button onClick={() => setEditingId(null)} variant="secondary" size="sm">{t("my.cancel", "取消")}</Button>
                               </div>
                             </div>
                           )}
                           {showReviewed && (
                             <div>
-                              <h4 className="text-xs font-bold text-green-700 mb-1">✅ 已审核版本</h4>
+                              <h4 className="text-xs font-bold text-green-700 mb-1">{t("file.reviewedHead", "✅ 已审核版本")}</h4>
                               <pre className="text-xs text-gray-600 whitespace-pre-wrap bg-green-50 p-3 rounded-lg max-h-40 overflow-y-auto">{showReviewed}</pre>
                             </div>
                           )}
@@ -734,7 +741,7 @@ const FilesPage: React.FC = () => {
         )}
 
         <p className="text-xs text-gray-400 mt-4 text-center">
-          📂 文件按处理进展归档 · 平台方可AI总结+人工审核 · 总结后生成归档副本 · DEMO限制单文件5MB
+          {t("file.footerNote", "📂 文件按处理进展归档 · 平台方可AI总结+人工审核 · 总结后生成归档副本 · DEMO限制单文件5MB")}
         </p>
       </div>
     </PageContainer>

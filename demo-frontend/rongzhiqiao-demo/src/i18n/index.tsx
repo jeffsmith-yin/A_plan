@@ -73,7 +73,7 @@ export function useT() {
   return (
     key: string,
     fallback = "",
-    vars?: Record<string, string | number>
+    vars?: Record<string, string | number | null | undefined>
   ): string => {
     let s: string;
     if (lang === "en") {

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageContainer, ProgressBar, BusinessCard, Button } from "../components/Common";
 import { experts, aiTalents } from "../data/demoData";
+import { useT } from "../i18n";
 
 const TOTAL_STEPS = 5;
 
@@ -9,12 +10,18 @@ const PlayPage: React.FC = () => {
   const [step, setStep] = useState(0);
   const [selectedPain, setSelectedPain] = useState<string | null>(null);
   const navigate = useNavigate();
+  const t = useT();
 
   const pains = [
-    { id: "customer", icon: "📢", title: "获客太难", desc: "想用AI精准拓客，降低获客成本" },
-    { id: "efficiency", icon: "⚡", title: "效率太低", desc: "想用AI自动化重复工作，提升人效" },
-    { id: "cost", icon: "💰", title: "成本太高", desc: "想用AI优化流程，降低运营成本" },
+    { id: "customer", icon: "📢", key: "customer" as const },
+    { id: "efficiency", icon: "⚡", key: "efficiency" as const },
+    { id: "cost", icon: "💰", key: "cost" as const },
   ];
+
+  const painTitle = (key: string) =>
+    t(`play.pain.${key}.title`, playPainTitle(key));
+  const painDesc = (key: string) =>
+    t(`play.pain.${key}.desc`, playPainDesc(key));
 
   const currentExpert = experts[0]; // 张建国
   const currentAi = aiTalents[0]; // 李明
@@ -24,7 +31,7 @@ const PlayPage: React.FC = () => {
   };
 
   return (
-    <PageContainer title="闯关体验">
+    <PageContainer title={t("play.title", "闯关体验")}>
       <div className="max-w-3xl mx-auto">
         <ProgressBar current={step} total={TOTAL_STEPS} />
 
@@ -32,10 +39,13 @@ const PlayPage: React.FC = () => {
         {step === 0 && (
           <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
             <h2 className="text-xl font-bold text-gray-800 mb-2">
-              🎯 第1关：选择企业痛点
+              {t("play.step1Title", "🎯 第1关：选择企业痛点")}
             </h2>
             <p className="text-gray-500 mb-6">
-              选择一个您企业当前最想用AI解决的问题
+              {t(
+                "play.step1Desc",
+                "选择一个您企业当前最想用AI解决的问题"
+              )}
             </p>
             <div className="grid grid-cols-3 gap-4 mb-6">
               {pains.map((pain) => (
@@ -47,13 +57,15 @@ const PlayPage: React.FC = () => {
                   onClick={() => setSelectedPain(pain.id)}
                 >
                   <div className="text-4xl mb-3">{pain.icon}</div>
-                  <h3 className="font-bold text-gray-800 mb-1">{pain.title}</h3>
-                  <p className="text-xs text-gray-500">{pain.desc}</p>
+                  <h3 className="font-bold text-gray-800 mb-1">
+                    {painTitle(pain.key)}
+                  </h3>
+                  <p className="text-xs text-gray-500">{painDesc(pain.key)}</p>
                 </div>
               ))}
             </div>
             <Button onClick={nextStep} disabled={!selectedPain} size="lg">
-              下一步：匹配专家 →
+              {t("play.nextMatchExpert", "下一步：匹配专家 →")}
             </Button>
           </div>
         )}
@@ -62,10 +74,10 @@ const PlayPage: React.FC = () => {
         {step === 1 && (
           <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
             <h2 className="text-xl font-bold text-gray-800 mb-2">
-              🔍 第2关：匹配行业专家
+              {t("play.step2Title", "🔍 第2关：匹配行业专家")}
             </h2>
             <p className="text-gray-500 mb-6">
-              根据您的痛点，AI智能匹配到以下专家
+              {t("play.step2Desc", "根据您的痛点，AI智能匹配到以下专家")}
             </p>
             <BusinessCard
               avatar={currentExpert.avatar}
@@ -80,10 +92,10 @@ const PlayPage: React.FC = () => {
             </BusinessCard>
             <div className="mt-6 flex gap-3">
               <Button onClick={nextStep} size="lg">
-                下一步：匹配AI人才 →
+                {t("play.nextMatchAi", "下一步：匹配AI人才 →")}
               </Button>
               <Button onClick={() => navigate("/chat")} variant="outline">
-                💬 与专家在线沟通
+                {t("play.chatExpert", "💬 与专家在线沟通")}
               </Button>
             </div>
           </div>
@@ -93,10 +105,13 @@ const PlayPage: React.FC = () => {
         {step === 2 && (
           <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
             <h2 className="text-xl font-bold text-gray-800 mb-2">
-              🤖 第3关：匹配AI技术人才
+              {t("play.step3Title", "🤖 第3关：匹配AI技术人才")}
             </h2>
             <p className="text-gray-500 mb-6">
-              您的AI技术搭档，负责将专家经验转化为可部署的AI方案
+              {t(
+                "play.step3Desc",
+                "您的AI技术搭档，负责将专家经验转化为可部署的AI方案"
+              )}
             </p>
             <div className="grid grid-cols-2 gap-4 mb-6">
               <BusinessCard
@@ -105,7 +120,9 @@ const PlayPage: React.FC = () => {
                 title={currentExpert.title}
                 tags={currentExpert.tags}
               >
-                <p className="text-xs text-gray-400">行业专家 · 诊断+审核</p>
+                <p className="text-xs text-gray-400">
+                  {t("play.expertRoleTag", "行业专家 · 诊断+审核")}
+                </p>
               </BusinessCard>
               <BusinessCard
                 avatar={currentAi.avatar}
@@ -120,7 +137,7 @@ const PlayPage: React.FC = () => {
               </BusinessCard>
             </div>
             <Button onClick={nextStep} size="lg">
-              下一步：查看方案 →
+              {t("play.nextViewPlan", "下一步：查看方案 →")}
             </Button>
           </div>
         )}
@@ -129,22 +146,52 @@ const PlayPage: React.FC = () => {
         {step === 3 && (
           <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
             <h2 className="text-xl font-bold text-gray-800 mb-2">
-              📋 第4关：查看定制方案
+              {t("play.step4Title", "📋 第4关：查看定制方案")}
             </h2>
             <p className="text-gray-500 mb-6">
-              {currentExpert.name} + {currentAi.name} 为您定制
+              {t("play.step4Desc", "{a} + {b} 为您定制", {
+                a: currentExpert.name,
+                b: currentAi.name,
+              })}
             </p>
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 border border-blue-100">
               <h3 className="font-bold text-lg text-gray-800 mb-4">
-                🏭 制造业AI降本增效方案（演示版）
+                {t("play.planTitle", "🏭 制造业AI降本增效方案（演示版）")}
               </h3>
               <div className="space-y-3">
                 {[
-                  { icon: "📅", title: "智能排产Agent", desc: "预计降低排产时间70%，减少换线浪费60%", color: "bg-green-50 border-green-200" },
-                  { icon: "🔍", title: "质量检测AI", desc: "预计降低不良率35%，减少漏检率80%", color: "bg-blue-50 border-blue-200" },
-                  { icon: "📦", title: "供应链优化模型", desc: "预计降低库存成本20%，提升交付准时率至94%", color: "bg-purple-50 border-purple-200" },
+                  {
+                    icon: "📅",
+                    title: t("play.plan1Title", "智能排产Agent"),
+                    desc: t(
+                      "play.plan1Desc",
+                      "预计降低排产时间70%，减少换线浪费60%"
+                    ),
+                    color: "bg-green-50 border-green-200",
+                  },
+                  {
+                    icon: "🔍",
+                    title: t("play.plan2Title", "质量检测AI"),
+                    desc: t(
+                      "play.plan2Desc",
+                      "预计降低不良率35%，减少漏检率80%"
+                    ),
+                    color: "bg-blue-50 border-blue-200",
+                  },
+                  {
+                    icon: "📦",
+                    title: t("play.plan3Title", "供应链优化模型"),
+                    desc: t(
+                      "play.plan3Desc",
+                      "预计降低库存成本20%，提升交付准时率至94%"
+                    ),
+                    color: "bg-purple-50 border-purple-200",
+                  },
                 ].map((item, i) => (
-                  <div key={i} className={`${item.color} border rounded-xl p-4 flex items-start gap-3`}>
+                  <div
+                    key={i}
+                    className={`${item.color} border rounded-xl p-4 flex items-start gap-3`}
+                  >
                     <span className="text-2xl">{item.icon}</span>
                     <div>
                       <h4 className="font-bold text-gray-800">{item.title}</h4>
@@ -156,10 +203,10 @@ const PlayPage: React.FC = () => {
             </div>
             <div className="flex gap-3">
               <Button onClick={nextStep} size="lg">
-                下一步：模拟交易 →
+                {t("play.nextSimulateTrade", "下一步：模拟交易 →")}
               </Button>
               <Button onClick={() => navigate("/skill-packs")} variant="outline">
-                📦 查看可复用技能包
+                {t("play.viewSkillPacks", "📦 查看可复用技能包")}
               </Button>
             </div>
           </div>
@@ -169,22 +216,29 @@ const PlayPage: React.FC = () => {
         {step === 4 && (
           <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
             <h2 className="text-xl font-bold text-gray-800 mb-2">
-              ⛓️ 第5关：模拟交易结算
+              {t("play.step5Title", "⛓️ 第5关：模拟交易结算")}
             </h2>
             <p className="text-gray-500 mb-6">
-              项目费用由W3智能合约自动分账
+              {t("play.step5Desc", "项目费用由W3智能合约自动分账")}
             </p>
 
             <div className="bg-gray-50 rounded-xl p-6 mb-6">
               <div className="text-center mb-4">
-                <span className="text-4xl font-bold text-primary-700">¥15,000</span>
-                <p className="text-sm text-gray-500">项目总费用</p>
+                <span className="text-4xl font-bold text-primary-700">
+                  ¥15,000
+                </span>
+                <p className="text-sm text-gray-500">
+                  {t("play.totalFee", "项目总费用")}
+                </p>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between bg-white rounded-lg p-3">
                   <div className="flex items-center gap-2">
                     <span>👤</span>
-                    <span className="font-medium">{currentExpert.name}（专家）</span>
+                    <span className="font-medium">
+                      {currentExpert.name}
+                      {t("play.tagExpert", "（专家）")}
+                    </span>
                   </div>
                   <div className="text-right">
                     <span className="font-bold text-green-600">¥6,000</span>
@@ -194,7 +248,10 @@ const PlayPage: React.FC = () => {
                 <div className="flex items-center justify-between bg-white rounded-lg p-3">
                   <div className="flex items-center gap-2">
                     <span>🤖</span>
-                    <span className="font-medium">{currentAi.name}（AI人才）</span>
+                    <span className="font-medium">
+                      {currentAi.name}
+                      {t("play.tagAi", "（AI人才）")}
+                    </span>
                   </div>
                   <div className="text-right">
                     <span className="font-bold text-green-600">¥6,000</span>
@@ -204,7 +261,9 @@ const PlayPage: React.FC = () => {
                 <div className="flex items-center justify-between bg-white rounded-lg p-3">
                   <div className="flex items-center gap-2">
                     <span>🌉</span>
-                    <span className="font-medium">融智桥平台</span>
+                    <span className="font-medium">
+                      {t("play.tagPlatform", "融智桥平台")}
+                    </span>
                   </div>
                   <div className="text-right">
                     <span className="font-bold text-gray-600">¥3,000</span>
@@ -213,16 +272,19 @@ const PlayPage: React.FC = () => {
                 </div>
               </div>
               <div className="mt-4 text-center text-xs text-gray-400">
-                ⛓️ 由W3智能合约自动执行分账 · 规则透明 · 不可篡改
+                {t(
+                  "play.splitNote",
+                  "⛓️ 由W3智能合约自动执行分账 · 规则透明 · 不可篡改"
+                )}
               </div>
             </div>
 
             <div className="flex gap-3">
               <Button onClick={() => navigate("/dashboard")} size="lg">
-                📊 查看平台数据看板 →
+                {t("play.viewDashboard", "📊 查看平台数据看板 →")}
               </Button>
               <Button onClick={() => navigate("/leaderboard")} variant="outline">
-                🏆 积分排行榜
+                {t("play.viewLeaderboard", "🏆 积分排行榜")}
               </Button>
             </div>
           </div>
@@ -231,5 +293,31 @@ const PlayPage: React.FC = () => {
     </PageContainer>
   );
 };
+
+// 痛点选项的默认（中文）兜底文案
+function playPainTitle(key: string): string {
+  switch (key) {
+    case "customer":
+      return "获客太难";
+    case "efficiency":
+      return "效率太低";
+    case "cost":
+      return "成本太高";
+    default:
+      return "";
+  }
+}
+function playPainDesc(key: string): string {
+  switch (key) {
+    case "customer":
+      return "想用AI精准拓客，降低获客成本";
+    case "efficiency":
+      return "想用AI自动化重复工作，提升人效";
+    case "cost":
+      return "想用AI优化流程，降低运营成本";
+    default:
+      return "";
+  }
+}
 
 export default PlayPage;

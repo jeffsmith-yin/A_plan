@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageContainer, Button } from "../components/Common";
 import { getCart, removeFromCart, updateCartItemQuantity, clearCart, getCartTotal, CartItem } from "../data/store";
+import { useT } from "../i18n";
 
 const CartPage: React.FC = () => {
+  const t = useT();
   const navigate = useNavigate();
   const [cart, setCart] = useState(getCart());
 
@@ -31,20 +33,20 @@ const CartPage: React.FC = () => {
   const total = getCartTotal();
 
   return (
-    <PageContainer title="购物车">
+    <PageContainer title={t("cart.title", "购物车")}>
       <div className="max-w-3xl mx-auto">
         {cart.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
             <div className="text-5xl mb-4">🛒</div>
-            <p className="text-gray-500 mb-4">购物车是空的</p>
-            <Button onClick={() => navigate("/market")} variant="outline">去逛逛产品市场</Button>
+            <p className="text-gray-500 mb-4">{t("cart.empty", "购物车是空的")}</p>
+            <Button onClick={() => navigate("/market")} variant="outline">{t("cart.goMarket", "去逛逛产品市场")}</Button>
           </div>
         ) : (
           <>
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-6">
               <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="font-bold text-gray-800">购物清单（{cart.length}项）</h3>
-                <button onClick={handleClear} className="text-xs text-red-400 hover:text-red-600">清空购物车</button>
+                <h3 className="font-bold text-gray-800">{t("cart.list", "购物清单（{n}项）", { n: cart.length })}</h3>
+                <button onClick={handleClear} className="text-xs text-red-400 hover:text-red-600">{t("cart.clear", "清空购物车")}</button>
               </div>
               <div className="divide-y divide-gray-50">
                 {cart.map(item => (
@@ -78,15 +80,15 @@ const CartPage: React.FC = () => {
             {/* 合计 */}
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-6">
               <div className="flex items-center justify-between text-lg">
-                <span className="font-bold text-gray-800">合计</span>
+                <span className="font-bold text-gray-800">{t("cart.total", "合计")}</span>
                 <span className="font-bold text-primary-700 text-2xl">¥{total.toLocaleString()}</span>
               </div>
-              <p className="text-xs text-gray-400 mt-1">价格不含税，正式版将自动计算税费</p>
+              <p className="text-xs text-gray-400 mt-1">{t("cart.taxNote", "价格不含税，正式版将自动计算税费")}</p>
             </div>
 
             <div className="flex gap-3">
-              <Button onClick={() => navigate("/market")} variant="outline">← 继续选购</Button>
-              <Button onClick={() => navigate("/checkout")} size="lg">💳 去结算</Button>
+              <Button onClick={() => navigate("/market")} variant="outline">{t("cart.continue", "← 继续选购")}</Button>
+              <Button onClick={() => navigate("/checkout")} size="lg">{t("cart.checkout", "💳 去结算")}</Button>
             </div>
           </>
         )}

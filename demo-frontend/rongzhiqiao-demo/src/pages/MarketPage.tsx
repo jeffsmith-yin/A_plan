@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageContainer, Button, DemoBadge } from "../components/Common";
 import { getDemoProducts, addToCart, getCartCount, Product, ProductRegion, REGION_LABELS, markNDASigned, hasSignedNDA, searchProducts, getProductsSortedByPrice, getProductsSortedByPopularity } from "../data/store";
+import { useT } from "../i18n";
 
 const MarketPage: React.FC = () => {
+  const t = useT();
   const navigate = useNavigate();
   const [activeRegion, setActiveRegion] = useState<ProductRegion>("demo");
   const [addedMsg, setAddedMsg] = useState<string | null>(null);
@@ -36,17 +38,17 @@ const MarketPage: React.FC = () => {
       return;
     }
     addToCart(product);
-    setAddedMsg(`"${product.name}" 已加入购物车`);
+    setAddedMsg(t("market.added", "「{name}」已加入购物车", { name: product.name }));
     setTimeout(() => setAddedMsg(null), 2000);
   };
 
   const handleSignNDA = () => {
-    if (!ndaAgree || !ndaName.trim()) { alert("请勾选同意并输入姓名"); return; }
+    if (!ndaAgree || !ndaName.trim()) { alert(t("market.ndaRequired", "请勾选同意并输入姓名")); return; }
     markNDASigned();
     setShowNDA(false);
     if (pendingProduct) {
       addToCart(pendingProduct);
-      setAddedMsg(`"${pendingProduct.name}" 已加入购物车（NDA已签署）`);
+      setAddedMsg(t("market.addedNda", "「{name}」已加入购物车（NDA已签署）", { name: pendingProduct.name }));
       setTimeout(() => setAddedMsg(null), 2000);
       setPendingProduct(null);
     }
@@ -55,21 +57,21 @@ const MarketPage: React.FC = () => {
   };
 
   const REGION_TABS: Array<{ key: ProductRegion; label: string; icon: string; desc: string }> = [
-    { key: "demo", label: "DEMO区", icon: "🧪", desc: "免费试用体验" },
-    { key: "product", label: "产品区", icon: "📦", desc: "AI解决方案" },
-    { key: "skill", label: "技能区", icon: "🔧", desc: "专家技能包" },
-    { key: "course", label: "课件区", icon: "📚", desc: "培训课程" },
+    { key: "demo", label: t("market.regionDemo", "DEMO区"), icon: "🧪", desc: t("market.regionDemoDesc", "免费试用体验") },
+    { key: "product", label: t("market.regionProduct", "产品区"), icon: "📦", desc: t("market.regionProductDesc", "AI解决方案") },
+    { key: "skill", label: t("market.regionSkill", "技能区"), icon: "🔧", desc: t("market.regionSkillDesc", "专家技能包") },
+    { key: "course", label: t("market.regionCourse", "课件区"), icon: "📚", desc: t("market.regionCourseDesc", "培训课程") },
   ];
 
   return (
-    <PageContainer title="产品市场">
+    <PageContainer title={t("market.title", "产品市场")}>
       <div className="max-w-5xl mx-auto">
         {/* 购物车快捷入口 */}
         <div className="flex items-center justify-between mb-6">
-          <p className="text-sm text-gray-500">选择您需要的产品和服务，加入购物车统一结算</p>
+          <p className="text-sm text-gray-500">{t("market.intro", "选择您需要的产品和服务，加入购物车统一结算")}</p>
           <button onClick={() => navigate("/cart")}
             className="relative flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-xl hover:bg-primary-700 transition-all text-sm font-medium">
-            🛒 购物车
+            {t("market.cart", "🛒 购物车")}
             {cartCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                 {cartCount}
@@ -84,7 +86,7 @@ const MarketPage: React.FC = () => {
             <div className="flex-1 relative">
               <input type="text" value={searchKeyword}
                 onChange={e => setSearchKeyword(e.target.value)}
-                placeholder="🔍 搜索产品、标签..."
+                placeholder={t("market.searchPh", "🔍 搜索产品、标签...")}
                 className="w-full px-4 py-2 pl-10 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-200 focus:border-primary-400 outline-none" />
               <span className="absolute left-3 top-2 text-gray-400">🔍</span>
             </div>
@@ -92,20 +94,20 @@ const MarketPage: React.FC = () => {
               <button onClick={() => setSortMode("default")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   sortMode === "default" ? "bg-white shadow text-primary-700" : "text-gray-500"
-                }`}>默认</button>
+                }`}>{t("market.sortDefault", "默认")}</button>
               <button onClick={() => setSortMode("price")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   sortMode === "price" ? "bg-white shadow text-primary-700" : "text-gray-500"
-                }`}>💰 价格</button>
+                }`}>{t("market.sortPrice", "💰 价格")}</button>
               <button onClick={() => setSortMode("popularity")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   sortMode === "popularity" ? "bg-white shadow text-primary-700" : "text-gray-500"
-                }`}>🔥 热度</button>
+                }`}>{t("market.sortHot", "🔥 热度")}</button>
             </div>
           </div>
           {searchKeyword && (
             <p className="text-xs text-gray-400 mt-2">
-              搜索「{searchKeyword}」：{regionProducts.length} 个结果
+              {t("market.searchResult", "搜索「{kw}」：{n} 个结果", { kw: searchKeyword, n: regionProducts.length })}
             </p>
           )}
         </div>
@@ -128,7 +130,7 @@ const MarketPage: React.FC = () => {
                 </div>
                 <div className="text-[10px] text-gray-400">{tab.desc}</div>
                 <div className={`text-xs mt-1 ${activeRegion === tab.key ? "text-primary-500" : "text-gray-400"}`}>
-                  {count}个产品
+                  {count}{t("market.prodCount", "个产品")}
                 </div>
               </button>
             );
@@ -146,7 +148,7 @@ const MarketPage: React.FC = () => {
         {regionProducts.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
             <div className="text-4xl mb-3">📭</div>
-            <p className="text-gray-400">该区域暂无产品</p>
+            <p className="text-gray-400">{t("market.empty", "该区域暂无产品")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4">
@@ -155,15 +157,15 @@ const MarketPage: React.FC = () => {
                 className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow">
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-start gap-3">
-                      <span className="text-3xl">{product.icon}</span>
-                      <div>
-                        <h3 className="font-bold text-gray-800 text-sm">{product.name}</h3>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className="text-[10px] text-gray-400">提供者：{product.provider}</span>
+                      <div className="flex items-start gap-3">
+                        <span className="text-3xl">{product.icon}</span>
+                        <div>
+                          <h3 className="font-bold text-gray-800 text-sm">{product.name}</h3>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="text-[10px] text-gray-400">{t("market.provider", "提供者：{provider}", { provider: product.provider })}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
                   </div>
                   <p className="text-xs text-gray-500 mb-3 line-clamp-2">{product.description}</p>
                   <div className="flex flex-wrap gap-1 mb-4">
@@ -174,7 +176,7 @@ const MarketPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       {product.price === 0 ? (
-                        <span className="text-lg font-bold text-green-600">免费</span>
+                        <span className="text-lg font-bold text-green-600">{t("market.free", "免费")}</span>
                       ) : (
                         <div>
                           <span className="text-lg font-bold text-primary-700">¥{product.salePrice.toLocaleString()}</span>

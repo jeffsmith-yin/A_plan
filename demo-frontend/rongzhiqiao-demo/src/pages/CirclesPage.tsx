@@ -5,8 +5,13 @@ import {
   getDemoCircles, Circle, subscribeToCircle, isSubscribedToCircle,
   searchCircles, getCirclesSortedByRanking, getCirclesSortedByMembers,
 } from "../data/store";
+import { useT, useLang } from "../i18n";
 
 const CirclesPage: React.FC = () => {
+  const t = useT();
+  const { lang } = useLang();
+  const fmtWan = (n: number) =>
+    lang === "en" ? `${(n / 1000).toFixed(1)}k` : `${(n / 10000).toFixed(1)}万`;
   const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useState("");
   const [sortMode, setSortMode] = useState<"ranking" | "members">("ranking");
@@ -22,7 +27,10 @@ const CirclesPage: React.FC = () => {
   const handleSubscribe = (circle: Circle) => {
     subscribeToCircle(circle.id, circle.saleFee);
     setShowSubscribe(false);
-    setSubMsg(`已订阅「${circle.name}」！有效期至 ${new Date(Date.now() + 365*24*60*60*1000).toLocaleDateString("zh-CN")}`);
+    setSubMsg(t("circle.subscribed", "已订阅「{name}」！有效期至 {date}", {
+      name: circle.name,
+      date: new Date(Date.now() + 365*24*60*60*1000).toLocaleDateString("zh-CN"),
+    }));
     setTimeout(() => setSubMsg(null), 3000);
   };
 
@@ -32,7 +40,7 @@ const CirclesPage: React.FC = () => {
   };
 
   return (
-    <PageContainer title="圈子">
+    <PageContainer title={t("circle.title", "圈子")}>
       <div className="max-w-5xl mx-auto">
         {/* 顶部搜索 + 排序 */}
         <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100 mb-6">
@@ -40,7 +48,7 @@ const CirclesPage: React.FC = () => {
             <div className="flex-1 relative">
               <input type="text" value={searchKeyword}
                 onChange={e => setSearchKeyword(e.target.value)}
-                placeholder="🔍 搜索圈子、关键词..."
+                placeholder={t("circle.searchPh", "🔍 搜索圈子、关键词...")}
                 className="w-full px-4 py-2.5 pl-10 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-200 focus:border-primary-400 outline-none" />
               <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
             </div>
@@ -49,13 +57,13 @@ const CirclesPage: React.FC = () => {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   sortMode === "ranking" ? "bg-white shadow text-primary-700" : "text-gray-500"
                 }`}>
-                🏆 排名
+                {t("circle.rank", "🏆 排名")}
               </button>
               <button onClick={() => setSortMode("members")}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   sortMode === "members" ? "bg-white shadow text-primary-700" : "text-gray-500"
                 }`}>
-                👥 人数
+                {t("circle.members", "👥 人数")}
               </button>
             </div>
           </div>
@@ -71,7 +79,7 @@ const CirclesPage: React.FC = () => {
         {filtered.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
             <div className="text-4xl mb-3">🔍</div>
-            <p className="text-gray-400">未找到匹配的圈子</p>
+            <p className="text-gray-400">{t("circle.noMatch", "未找到匹配的圈子")}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -95,14 +103,14 @@ const CirclesPage: React.FC = () => {
                           <span className="text-2xl">{circle.icon}</span>
                           <h3 className="font-bold text-lg text-gray-800">{circle.name}</h3>
                           {subscribed && (
-                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">已订阅</span>
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{t("circle.subscribedBadge", "已订阅")}</span>
                           )}
                         </div>
                         <p className="text-sm text-gray-500 mb-3">{circle.description}</p>
 
                         <div className="flex items-center gap-4 text-xs text-gray-400 mb-3">
-                          <span>👥 {(circle.memberCount/10000).toFixed(1)}万成员</span>
-                          <span>📝 {(circle.postCount/10000).toFixed(1)}万帖子</span>
+                          <span>👥 {fmtWan(circle.memberCount)}{t("circle.membersUnit", "成员")}</span>
+                          <span>📝 {fmtWan(circle.postCount)}{t("circle.postsUnit", "帖子")}</span>
                           <span>🏷️ {circle.tags.slice(0, 3).join(" · ")}</span>
                         </div>
 
@@ -115,18 +123,18 @@ const CirclesPage: React.FC = () => {
                             )}
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => handleViewDetail(circle)}
-                              className="text-xs text-gray-500 hover:text-primary-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-primary-300">
-                              查看详情
-                            </button>
+                              <button onClick={() => handleViewDetail(circle)}
+                                className="text-xs text-gray-500 hover:text-primary-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-primary-300">
+                                {t("circle.viewDetail", "查看详情")}
+                              </button>
                             {subscribed ? (
                               <span className="text-xs text-green-600 bg-green-50 px-3 py-1.5 rounded-lg font-medium">
-                                ✅ 已加入
+                                {t("circle.joined", "✅ 已加入")}
                               </span>
                             ) : (
                               <button onClick={() => { setSelectedCircle(circle); setShowSubscribe(true); }}
                                 className="text-xs bg-primary-600 text-white px-4 py-1.5 rounded-lg hover:bg-primary-700 font-medium">
-                                加入圈子
+                                {t("circle.join", "加入圈子")}
                               </button>
                             )}
                           </div>
@@ -148,46 +156,46 @@ const CirclesPage: React.FC = () => {
                 <span className="text-3xl">{selectedCircle.icon}</span>
                 <div>
                   <h3 className="font-bold text-lg text-gray-800">{selectedCircle.name}</h3>
-                  <p className="text-sm text-gray-500">{selectedCircle.category} · {(selectedCircle.memberCount/10000).toFixed(1)}万成员</p>
+                  <p className="text-sm text-gray-500">{selectedCircle.category} · {fmtWan(selectedCircle.memberCount)}{t("circle.membersUnit", "成员")}</p>
                 </div>
               </div>
 
               <div className="bg-gray-50 rounded-xl p-4 mb-4">
-                <h4 className="font-bold text-sm text-gray-700 mb-2">圈子介绍</h4>
+                <h4 className="font-bold text-sm text-gray-700 mb-2">{t("circle.intro", "圈子介绍")}</h4>
                 <p className="text-sm text-gray-600 leading-relaxed">{selectedCircle.longIntro}</p>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
+                <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
                 <span>🏷️ {selectedCircle.tags.join(" · ")}</span>
-                <span>📝 {(selectedCircle.postCount/10000).toFixed(1)}万帖子</span>
+                <span>📝 {fmtWan(selectedCircle.postCount)}{t("circle.postsUnit", "帖子")}</span>
               </div>
 
               <div className="bg-primary-50 rounded-xl p-4 mb-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">年费订阅</span>
+                  <span className="text-sm text-gray-700">{t("circle.yearFee", "年费订阅")}</span>
                   <div className="text-right">
                     <span className="text-2xl font-bold text-primary-700">¥{selectedCircle.saleFee}</span>
-                    <span className="text-sm text-gray-400">/年</span>
+                    <span className="text-sm text-gray-400">{t("circle.perYear", "/年")}</span>
                     {selectedCircle.saleFee < selectedCircle.annualFee && (
-                      <div className="text-xs text-gray-400 line-through">原价 ¥{selectedCircle.annualFee}/年</div>
+                      <div className="text-xs text-gray-400 line-through">{t("circle.originalPrice", "原价 ¥{price}/年", { price: selectedCircle.annualFee })}</div>
                     )}
                   </div>
                 </div>
-                <p className="text-xs text-primary-600 mt-2">📅 订阅有效期至 {new Date(Date.now() + 365*24*60*60*1000).toLocaleDateString("zh-CN")}</p>
+                <p className="text-xs text-primary-600 mt-2">{t("circle.subscribeUntil", "📅 订阅有效期至 {date}", { date: new Date(Date.now() + 365*24*60*60*1000).toLocaleDateString("zh-CN") })}</p>
               </div>
 
               <div className="flex gap-3">
                 <button onClick={() => setShowSubscribe(false)}
                   className="flex-1 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50">
-                  取消
+                  {t("my.cancel", "取消")}
                 </button>
                 <button onClick={() => handleSubscribe(selectedCircle)}
                   className="flex-1 py-2.5 text-sm bg-primary-600 text-white rounded-xl hover:bg-primary-700 font-medium">
-                  💰 确认订阅（¥{selectedCircle.saleFee}/年）
+                  {t("circle.confirmSub", "💰 确认订阅（¥{fee}/年）", { fee: selectedCircle.saleFee })}
                 </button>
               </div>
 
-              <p className="text-xs text-gray-400 mt-3 text-center">⚠️ DEMO环境，订阅为模拟操作，不会真实扣款</p>
+              <p className="text-xs text-gray-400 mt-3 text-center">{t("circle.demoNote", "⚠️ DEMO环境，订阅为模拟操作，不会真实扣款")}</p>
             </div>
           </div>
         )}

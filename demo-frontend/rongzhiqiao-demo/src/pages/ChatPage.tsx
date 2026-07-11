@@ -6,8 +6,10 @@ import {
   sendMessage, ChatMessage, RoleCard, ROLE_LABELS, SECONDARY_LABELS,
   getPlatformDisplayName,
 } from "../data/store";
+import { useT } from "../i18n";
 
 const ChatPage: React.FC = () => {
+  const t = useT();
   const { targetId } = useParams<{ targetId: string }>();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -125,18 +127,18 @@ const ChatPage: React.FC = () => {
   };
 
   const getTitle = () => {
-    if (isPlatformChannel) return "🌉 平台内部频道";
-    if (isGroupChat) return "💬 群聊大厅";
-    if (targetRole) return `💬 与 ${getPlatformDisplayName(targetRole)} 私聊`;
-    return "聊天";
+    if (isPlatformChannel) return t("chat.titlePlatform", "🌉 平台内部频道");
+    if (isGroupChat) return t("chat.titleGroup", "💬 群聊大厅");
+    if (targetRole) return t("chat.titlePrivate", "💬 与 {name} 私聊", { name: getPlatformDisplayName(targetRole) });
+    return t("chat.title", "聊天");
   };
 
   if (!currentRole) {
     return (
-      <PageContainer title="聊天">
+      <PageContainer title={t("chat.title", "聊天")}>
         <div className="text-center py-16 text-gray-500">
-          请先在平台大厅添加角色
-          <button onClick={() => navigate("/hub")} className="text-primary-600 ml-2 underline">前往大厅</button>
+          {t("chat.noRole", "请先在平台大厅添加角色")}
+          <button onClick={() => navigate("/hub")} className="text-primary-600 ml-2 underline">{t("chat.goHub", "前往大厅")}</button>
         </div>
       </PageContainer>
     );
@@ -144,11 +146,11 @@ const ChatPage: React.FC = () => {
 
   if (isPlatformChannel && currentRole.role !== "platform") {
     return (
-      <PageContainer title="平台内部频道">
+      <PageContainer title={t("chat.titlePlatform", "🌉 平台内部频道")}>
         <div className="text-center py-16 text-gray-500">
           <div className="text-4xl mb-3">🔒</div>
-          <p>平台内部频道仅限平台方角色访问</p>
-          <button onClick={() => navigate("/hub")} className="text-primary-600 mt-2 underline">返回大厅</button>
+          <p>{t("chat.platformOnly", "平台内部频道仅限平台方角色访问")}</p>
+          <button onClick={() => navigate("/hub")} className="text-primary-600 mt-2 underline">{t("chat.backHub", "返回大厅")}</button>
         </div>
       </PageContainer>
     );
@@ -165,18 +167,18 @@ const ChatPage: React.FC = () => {
             isPlatformChannel ? "bg-amber-50 border-amber-200" : "bg-gray-50 border-gray-100"
           }`}>
             <div className="flex items-center gap-3">
-              <button onClick={() => navigate("/hub")} className="text-gray-400 hover:text-gray-600">← 返回</button>
+              <button onClick={() => navigate("/hub")} className="text-gray-400 hover:text-gray-600">{t("chat.back", "← 返回")}</button>
               {isPlatformChannel ? (
                 <div className="flex items-center gap-2">
                   <span className="text-xl">🌉</span>
-                  <span className="font-bold text-amber-800">平台内部频道</span>
-                  <span className="text-xs text-amber-600">平台方专用</span>
+                  <span className="font-bold text-amber-800">{t("chat.titlePlatform", "🌉 平台内部频道")}</span>
+                  <span className="text-xs text-amber-600">{t("chat.platformOnlyTag", "平台方专用")}</span>
                 </div>
               ) : isGroupChat ? (
                 <div className="flex items-center gap-2">
                   <span className="text-xl">💬</span>
-                  <span className="font-bold text-gray-800">群聊大厅</span>
-                  <span className="text-xs text-gray-400">输入 @ 可提及他人</span>
+                  <span className="font-bold text-gray-800">{t("chat.groupLabel", "群聊大厅")}</span>
+                  <span className="text-xs text-gray-400">{t("chat.mentionHint", "输入 @ 可提及他人")}</span>
                 </div>
               ) : targetRole && (
                 <div className="flex items-center gap-2">
@@ -201,7 +203,7 @@ const ChatPage: React.FC = () => {
             {messages.length === 0 && (
               <div className="text-center py-16 text-gray-400">
                 <div className="text-4xl mb-3">💬</div>
-                <p>{isPlatformChannel ? "平台方内部频道" : isGroupChat ? "群聊大厅，输入 @ 可提及特定成员" : "还没有消息"}</p>
+                <p>{isPlatformChannel ? t("chat.platformEmpty", "平台方内部频道") : isGroupChat ? t("chat.groupEmpty", "群聊大厅，输入 @ 可提及特定成员") : t("chat.empty", "还没有消息")}</p>
               </div>
             )}
             {messages.map((msg) => {
@@ -235,7 +237,7 @@ const ChatPage: React.FC = () => {
                       {renderMessageText(msg)}
                     </div>
                     <div className={`text-[10px] text-gray-400 mt-0.5 flex items-center gap-1 ${isMine ? "justify-end mr-1" : "ml-1"}`}>
-                      {isMentioned && !isMine && <span className="text-primary-500 font-medium">@了你</span>}
+                      {isMentioned && !isMine && <span className="text-primary-500 font-medium">{t("chat.mentionedYou", "@了你")}</span>}
                       <span>{new Date(msg.timestamp).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
                   </div>
@@ -263,7 +265,7 @@ const ChatPage: React.FC = () => {
                     </button>
                   ))}
                 {mentionableRoles.filter(r => !mentionFilter || r.name.includes(mentionFilter)).length === 0 && (
-                  <div className="px-4 py-3 text-xs text-gray-400">无匹配成员</div>
+                  <div className="px-4 py-3 text-xs text-gray-400">{t("chat.noMatch", "无匹配成员")}</div>
                 )}
               </div>
             )}
@@ -272,9 +274,9 @@ const ChatPage: React.FC = () => {
               <textarea ref={inputRef} value={text} onChange={handleTextChange}
                 onKeyDown={handleKeyDown} rows={2}
                 placeholder={
-                  isGroupChat ? "输入消息，输入 @ 可提及特定成员..." :
-                  isPlatformChannel ? "发送到平台内部频道..." :
-                  `发送给 ${targetRole ? getPlatformDisplayName(targetRole) : "..."}...`
+                  isGroupChat ? t("chat.phGroup", "输入消息，输入 @ 可提及特定成员...") :
+                  isPlatformChannel ? t("chat.phPlatform", "发送到平台内部频道...") :
+                  t("chat.phPrivate", "发送给 {name}...", { name: targetRole ? getPlatformDisplayName(targetRole) : "..." })
                 }
                 className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-200 focus:border-primary-400 outline-none resize-none text-sm"
               />
@@ -282,13 +284,13 @@ const ChatPage: React.FC = () => {
                 className={`self-end px-6 py-2.5 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all ${
                   isPlatformChannel ? "bg-amber-600 hover:bg-amber-700" : "bg-primary-600 hover:bg-primary-700"
                 }`}>
-                发送
+                {t("chat.send", "发送")}
               </button>
             </div>
             <div className="flex items-center justify-between mt-2">
-              <p className="text-xs text-gray-400">Enter 发送 · Shift+Enter 换行 · 输入 @ 提及成员</p>
+              <p className="text-xs text-gray-400">{t("chat.hint", "Enter 发送 · Shift+Enter 换行 · 输入 @ 提及成员")}</p>
               {isGroupChat && (
-                <span className="text-xs text-primary-500">💡 试试 @某人 点名沟通</span>
+                <span className="text-xs text-primary-500">{t("chat.tipMention", "💡 试试 @某人 点名沟通")}</span>
               )}
             </div>
           </div>
@@ -299,12 +301,12 @@ const ChatPage: React.FC = () => {
           <button onClick={() => navigate("/chat/all")}
             className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
               isGroupChat ? "bg-primary-600 text-white border-primary-600" : "bg-white text-gray-600 border-gray-200 hover:border-primary-300"
-            }`}>💬 群聊</button>
+            }`}>{t("chat.quickGroup", "💬 群聊")}</button>
           {currentRole.role === "platform" && (
             <button onClick={() => navigate("/chat/platforms")}
               className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
                 isPlatformChannel ? "bg-amber-600 text-white border-amber-600" : "bg-white text-amber-600 border-amber-200 hover:border-amber-400"
-              }`}>🌉 平台内部</button>
+              }`}>{t("chat.quickPlatform", "🌉 平台内部")}</button>
           )}
           {allRoles.filter(r => r.id !== currentRole.id).map(r => (
             <button key={r.id} onClick={() => navigate(`/chat/${r.id}`)}
