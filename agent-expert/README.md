@@ -19,8 +19,9 @@ agent-expert/
 ├── src/
 │   ├── rag.js        # 知识库检索（词法 RAG；生产替换为 embedding 向量检索）
 │   ├── agent.js      # AI 智能体专家：analyze(text) → 结构化分析
-│   ├── index.js      # CLI 演示入口
-│   └── server.js     # Web 演示（企业代表输入痛点 → 智能体自动分析）
+│   ├── cart.js       # 购物车 + 按创建人（自然人/智能体）拟定分成结算
+│   ├── index.js      # CLI 演示入口（分析 + 购物车 + 分成）
+│   └── server.js     # Web 演示（分析 → 推荐技能包加入购物车 → 结算分成）
 └── README.md
 ```
 
@@ -29,6 +30,12 @@ agent-expert/
 - `rootCause` 根因推断、`suggestedRules` 建议规则（来自专家方法论）
 - `warnings` 风险预警指标、`confidence` 置信度、`escalate` 是否升级人工
 - `reply` 给企业的自然语言回复
+
+## 技能包商品化与购物车分成（演示）
+- **技能包可复用**：`manufacturing-skills.json` 中每个技能包带 `version` / `creator{type:'person'|'agent',name}` / `listPrice` / `share`，一次创作可售给多客户。
+- **加入购物车**：推荐技能包可加入购物车（CLI 自动加 / Web 点「+ 加入购物车」）；正式交付客户的智能解决方案 = 购物车结算。
+- **按创建人分成**：结算沿用「透明智能分账协议」——标准拆分 创建人 ~80% / 平台 take rate 18%（区间 10–20%）/ 链上清算 2%（区间 1–3%）。创建人为**自然人**→归属该专家；为**智能体**→归属其运营/AI 人才方。结算走 2-of-3 多签 + 人民币法币（联盟链测试网模拟）。
+- CLI：`node src/index.js` 末尾演示「购物车 + 按创建人分成结算」；Web：`/cart/add`、`/cart/checkout` 端点。
 
 ## 升级到生产的路径（见已交付 7 §3.3）
 1. 检索：`rag.js` 词法匹配 → **embedding 向量检索（RAG）**，语义召回更准；

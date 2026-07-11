@@ -1,12 +1,14 @@
 {
-  "version": "0.1",
+  "version": "0.2",
   "domain": "制造业",
-  "note": "种子知识库：由行业专家（35+，假名）授权方法论脱敏录入，演示数据。生产环境接入向量库 RAG 替代词法检索。",
+  "note": "种子知识库：由行业专家（35+，假名）或 AI 智能体授权方法论脱敏录入，演示数据。技能包可复用、版本化、可加入购物车并按创建人（自然人/智能体）拟定分成。生产环境接入向量库 RAG 替代词法检索。",
+  "shareScheme": { "creator": 0.80, "platform": 0.18, "chain": 0.02 },
   "skills": [
     {
       "id": "SK-001",
       "name": "生产排产优化",
       "domain": "制造业",
+      "version": "1.0.0",
       "tags": ["排产", "工序", "顺序", "产能"],
       "keywords": ["排产", "工序", "顺序", "产能", "设备", "订单"],
       "summary": "基于设备产能与工序约束生成可执行排产草案，降低对老师傅经验的依赖。",
@@ -23,12 +25,16 @@
         "lead": "交期红线：标红超期订单"
       },
       "warningMetrics": ["延误天数", "超期订单", "换型损耗"],
+      "creator": { "type": "person", "name": "王工·制造" },
+      "listPrice": 199,
+      "share": { "creator": 0.80, "platform": 0.18, "chain": 0.02 },
       "sourceExpert": "王工·制造"
     },
     {
       "id": "SK-002",
       "name": "交期风险预警",
       "domain": "制造业",
+      "version": "1.0.0",
       "tags": ["交期", "延误", "预警", "红线"],
       "keywords": ["交期", "延误", "预警", "红线", "超期"],
       "summary": "对订单交期建模，提前识别延误风险订单并标红，给出缓冲策略。",
@@ -43,12 +49,16 @@
         "buffer": "安全缓冲：关键订单预留 1–2 天缓冲"
       },
       "warningMetrics": ["延误天数", "超期订单"],
+      "creator": { "type": "person", "name": "王工·制造" },
+      "listPrice": 199,
+      "share": { "creator": 0.80, "platform": 0.18, "chain": 0.02 },
       "sourceExpert": "王工·制造"
     },
     {
       "id": "SK-003",
       "name": "换型损失降低",
       "domain": "制造业",
+      "version": "1.0.0",
       "tags": ["换型", "损耗", "夜班", "效率"],
       "keywords": ["换型", "损耗", "夜班", "效率"],
       "summary": "通过换型并线与批量化安排，降低换型带来的产能损耗。",
@@ -63,12 +73,16 @@
         "batch": "同类成批：减少换型次数"
       },
       "warningMetrics": ["换型损耗"],
+      "creator": { "type": "person", "name": "李工·精益" },
+      "listPrice": 199,
+      "share": { "creator": 0.80, "platform": 0.18, "chain": 0.02 },
       "sourceExpert": "李工·精益"
     },
     {
       "id": "SK-004",
       "name": "设备产能上限管理",
       "domain": "制造业",
+      "version": "1.0.0",
       "tags": ["设备", "产能", "瓶颈", "负荷"],
       "keywords": ["设备", "产能", "瓶颈", "负荷"],
       "summary": "识别产线瓶颈设备，按产能上限约束排产，避免过载与欠产。",
@@ -82,12 +96,16 @@
         "cap": "设备产能上限：限定单设备日最大工时"
       },
       "warningMetrics": ["设备负荷"],
+      "creator": { "type": "person", "name": "李工·精益" },
+      "listPrice": 199,
+      "share": { "creator": 0.80, "platform": 0.18, "chain": 0.02 },
       "sourceExpert": "李工·精益"
     },
     {
       "id": "SK-005",
       "name": "供应链缺料预警",
       "domain": "制造业",
+      "version": "1.0.0",
       "tags": ["缺料", "供应链", "物料", "齐套"],
       "keywords": ["缺料", "供应链", "物料", "齐套"],
       "summary": "对齐 BOM 与库存，提前预警缺料订单，保障齐套开工。",
@@ -101,12 +119,16 @@
         "material": "物料齐套：缺料订单标红预警"
       },
       "warningMetrics": ["缺料", "齐套率"],
+      "creator": { "type": "person", "name": "张工·供应链" },
+      "listPrice": 199,
+      "share": { "creator": 0.80, "platform": 0.18, "chain": 0.02 },
       "sourceExpert": "张工·供应链"
     },
     {
       "id": "SK-006",
       "name": "质量首件管控",
       "domain": "制造业",
+      "version": "1.0.0",
       "tags": ["质量", "首件", "良率", "缺陷"],
       "keywords": ["质量", "首件", "良率", "缺陷"],
       "summary": "以首件检验与过程良率监控降低批量质量风险。",
@@ -120,15 +142,19 @@
         "quality": "质量红线：良率越线停线"
       },
       "warningMetrics": ["良率", "缺陷"],
+      "creator": { "type": "person", "name": "陈工·质量" },
+      "listPrice": 199,
+      "share": { "creator": 0.80, "platform": 0.18, "chain": 0.02 },
       "sourceExpert": "陈工·质量"
     },
     {
       "id": "SK-007",
       "name": "需求波动平滑",
       "domain": "制造业",
+      "version": "1.0.0",
       "tags": ["波动", "库存", "柔性", "安全库存"],
       "keywords": ["波动", "库存", "柔性", "安全库存", "订单波动"],
-      "summary": "以安全库存与柔性排产平滑订单波动，降低急单对产线的冲击。",
+      "summary": "以安全库存与柔性排产平滑订单波动，降低急单对产线的冲击。由 AI 智能体专家沉淀的方法论封装而成。",
       "method": [
         "统计订单波动幅度与频次",
         "设定关键物料安全库存",
@@ -140,7 +166,10 @@
         "flex": "柔性排产：急单插单缓冲"
       },
       "warningMetrics": ["订单波动", "库存周转"],
-      "sourceExpert": "王工·制造"
+      "creator": { "type": "agent", "name": "融智桥·制造智能体" },
+      "listPrice": 199,
+      "share": { "creator": 0.80, "platform": 0.18, "chain": 0.02 },
+      "sourceExpert": "融智桥·制造智能体"
     }
   ]
 }

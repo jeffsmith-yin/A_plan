@@ -1,6 +1,8 @@
-// Web 演示服务：企业代表输入痛点 → AI 智能体专家自动分析（接知识库 RAG + 制造业 Skills）
+// Web 演示服务：企业代表输入痛点 → AI 智能体专家自动分析 → 推荐技能包加入购物车 → 按创建人分成结算
 import http from 'node:http'
 import { analyze } from './agent.js'
+import { loadKB } from './rag.js'
+import { addToCart, checkout, clearCart } from './cart.js'
 
 const PORT = process.env.PORT || 8787
 
@@ -28,13 +30,15 @@ textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px
 .escalate{background:#fdeee2;color:var(--warm);border-color:var(--warm)}
 .meta{font-size:12px;color:var(--sub);margin-top:10px}
 .demo{font-size:11px;color:var(--warm);background:#fdeee2;padding:6px 10px;border-radius:8px;margin-top:12px}
+#cart{margin-top:14px;display:none}
+#settle{margin-top:14px;display:none}
 </style>
 </head>
 <body>
 <div class="phone">
   <div class="top">
     <div class="t1"><span>融智桥 · AI 智能体专家</span><span class="badge">演示</span></div>
-    <div class="t2">制造业 Skills + 知识库 RAG · 自动痛点分析（AI 助手，非真实自然人）</div>
+    <div class="t2">制造业 Skills + 知识库 RAG · 自动痛点分析 → 技能包购物车 → 按创建人分成</div>
   </div>
   <div class="body">
     <div class="field"><label>企业代表描述痛点</label>
@@ -43,7 +47,9 @@ textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px
     <button class="btn" id="go">让 AI 智能体专家分析</button>
     <div class="meta" id="meta"></div>
     <div class="card" id="out" style="display:none"></div>
-    <div class="demo">全部为演示数据；AI 身份已显著标识，不冒充真实自然人专家。低置信度将建议转人工行业专家。</div>
+    <div id="cart"></div>
+    <div id="settle"></div>
+    <div class="demo">全部为演示数据；AI 身份已显著标识，不冒充真实自然人专家。技能包可复用、可加入购物车，按创建人（自然人/智能体）拟定分成（透明智能分账协议）。</div>
   </div>
 </div>
 <script>
@@ -63,9 +69,47 @@ btn.onclick=async()=>{
     out.style.display='block';
     out.className='card'+(d.escalate?' escalate':'');
     out.textContent='匹配技能：'+skills+'\\n根因：'+(d.rootCause||[]).join('；')+'\\n'+(rules?('建议规则：\\n'+rules+'\\n'):'')+'\\n'+d.reply;
+    renderCart(d.matchedSkills||[]);
   }catch(e){alert('分析失败：'+e.message);}
   finally{btn.disabled=false;btn.textContent='让 AI 智能体专家分析';}
 };
+
+function renderCart(skills){
+  const box=document.getElementById('cart');
+  if(!skills.length){box.style.display='none';return;}
+  box.style.display='block';
+  box.innerHTML='<div style="font-size:13px;color:#6b7785;margin-bottom:8px">推荐技能包（可加入购物车）：</div>';
+  skills.forEach(function(s){
+    const b=document.createElement('button');
+    b.textContent='+ '+s.name+' ('+s.id+')';
+    b.style.cssText='margin:4px;padding:6px 10px;border:1px solid #0e7c86;background:#e6f4f5;color:#0a5a62;border-radius:8px;font-size:12px;cursor:pointer';
+    b.onclick=async()=>{
+      await fetch('/cart/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:s.id})});
+      b.disabled=true;b.textContent='✓ 已加 '+s.name;
+    };
+    box.appendChild(b);
+  });
+  const co=document.createElement('button');
+  co.textContent='结算并分成';
+  co.style.cssText='display:block;width:100%;margin-top:10px;padding:10px;background:#f0883a;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer';
+  co.onclick=async()=>{
+    const res=await fetch('/cart/checkout',{method:'POST'});
+    const st=await res.json();
+    renderSettle(st);
+  };
+  box.appendChild(co);
+}
+
+function renderSettle(st){
+  const el=document.getElementById('settle');
+  el.style.display='block';
+  let html='<div class="card"><b>结算 · '+st.protocol+'</b><br>'+st.settlement+'<br>订单总额：¥'+st.total+'<br>';
+  (st.lines||[]).forEach(function(l){
+    html+='· '+l.name+' 创建人['+l.creator.type+':'+l.creator.name+'] ¥'+l.price+' → 创建人¥'+l.creatorPayout+' / 平台¥'+l.platformPayout+' / 链上¥'+l.chainPayout+'<br>';
+  });
+  html+='合计：创建人¥'+st.totals.creatorTotal+' / 平台¥'+st.totals.platformTotal+' / 链上¥'+st.totals.chainTotal+'<br><span style="font-size:11px;color:#d9822b">'+st.note+'</span></div>';
+  el.innerHTML=html;
+}
 </script>
 </body>
 </html>`
@@ -82,9 +126,8 @@ const server = http.createServer(async (req, res) => {
     req.on('end', () => {
       try {
         const { text } = JSON.parse(body || '{}')
-        const result = analyze(text || '')
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
-        res.end(JSON.stringify(result))
+        res.end(JSON.stringify(analyze(text || '')))
       } catch (e) {
         res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' })
         res.end(JSON.stringify({ error: String(e) }))
@@ -92,7 +135,42 @@ const server = http.createServer(async (req, res) => {
     })
     return
   }
-  res.writeHead(404); res.end('Not Found')
+  if (req.method === 'POST' && req.url === '/cart/add') {
+    let body = ''
+    req.on('data', (c) => (body += c))
+    req.on('end', () => {
+      try {
+        const { id } = JSON.parse(body || '{}')
+        const ok = addToCart(id)
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+        res.end(JSON.stringify({ ok, id }))
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' })
+        res.end(JSON.stringify({ error: String(e) }))
+      }
+    })
+    return
+  }
+  if (req.method === 'POST' && req.url === '/cart/checkout') {
+    try {
+      const kb = loadKB()
+      const settle = checkout(kb)
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+      res.end(JSON.stringify(settle))
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' })
+      res.end(JSON.stringify({ error: String(e) }))
+    }
+    return
+  }
+  if (req.method === 'POST' && req.url === '/cart/clear') {
+    clearCart()
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+    res.end(JSON.stringify({ ok: true }))
+    return
+  }
+  res.writeHead(404)
+  res.end('Not Found')
 })
 
 server.listen(PORT, () => {
