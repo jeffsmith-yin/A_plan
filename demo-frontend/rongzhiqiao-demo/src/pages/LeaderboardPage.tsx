@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useT } from "../i18n";
 import { PageContainer, DemoBadge } from "../components/Common";
 import { getScoreLeaderboard, getRoles, ROLE_LABELS, SCORE_RULES } from "../data/store";
 
 const LeaderboardPage: React.FC = () => {
+  const t = useT();
   const [leaderboard, setLeaderboard] = useState(getScoreLeaderboard());
 
   useEffect(() => {
@@ -16,7 +18,7 @@ const LeaderboardPage: React.FC = () => {
   };
 
   return (
-    <PageContainer title="积分排行榜">
+    <PageContainer title={t("leaderboard.title", "积分排行榜")}>
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="bg-gradient-to-r from-yellow-50 to-amber-50 px-6 py-4 border-b border-amber-100 flex items-center gap-2">

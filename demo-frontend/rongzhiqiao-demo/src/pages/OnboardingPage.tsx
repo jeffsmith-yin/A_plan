@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useT } from "../i18n";
 import { useNavigate } from "react-router-dom";
 import { PageContainer, Button } from "../components/Common";
 import {
@@ -21,6 +22,7 @@ const ROLE_DESCS: Record<RoleType, { icon: string; label: string; desc: string }
 const USER_SELECTABLE_ROLES: RoleType[] = ["expert", "ai", "enterprise"];
 
 const OnboardingPage: React.FC = () => {
+  const t = useT();
   const [step, setStep] = useState<"info" | "choose" | "register" | "done">("info");
   const [personForm, setPersonForm] = useState({ name: "", phoneNum: "", wechat: "", title: "", intro: "" });
   const [selectedRoles, setSelectedRoles] = useState<RoleType[]>([]);
@@ -234,7 +236,7 @@ const OnboardingPage: React.FC = () => {
   };
 
   return (
-    <PageContainer title="入驻融智桥">
+    <PageContainer title={t("onboard.title", "入驻融智桥")}>
       <div className="max-w-2xl mx-auto">
         {/* 第一步：填写个人信息 */}
         {step === "info" && (

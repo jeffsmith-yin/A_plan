@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/Common";
+import { useT } from "../i18n";
 import {
   isLoggedIn, logout, getCurrentUser, getRoles, getUserRoles,
   setCurrentRoleId, ROLE_LABELS,
@@ -8,6 +9,7 @@ import {
 
 const NDAPage: React.FC = () => {
   const navigate = useNavigate();
+  const t = useT();
   const loggedIn = isLoggedIn();
   const user = getCurrentUser();
   const userRoles = loggedIn ? getUserRoles() : [];
@@ -29,13 +31,13 @@ const NDAPage: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
         <div className="text-center max-w-lg">
           <span className="text-7xl">🌉</span>
-          <h1 className="text-3xl font-bold text-gray-800 mt-6 mb-3">融智桥</h1>
-          <p className="text-lg text-gray-500 mb-2">AI驱动的四方协作平台</p>
-          <p className="text-sm text-gray-400 mb-8">行业专家 × AI人才 × 企业客户 × 平台方</p>
+          <h1 className="text-3xl font-bold text-gray-800 mt-6 mb-3">{t("app.name", "融智桥")}</h1>
+          <p className="text-lg text-gray-500 mb-2">{t("app.tagline", "AI驱动的四方协作平台")}</p>
+          <p className="text-sm text-gray-400 mb-8">{t("app.fourRoles", "行业专家 × AI人才 × 企业客户 × 平台方")}</p>
           <div className="flex gap-4 justify-center">
-            <Button onClick={() => navigate("/login")} size="lg">📱 手机号登录/注册</Button>
+            <Button onClick={() => navigate("/login")} size="lg">{t("nda.loginBtn", "📱 手机号登录/注册")}</Button>
           </div>
-          <p className="text-xs text-gray-400 mt-6">DEMO版本 · 数据仅本地存储</p>
+          <p className="text-xs text-gray-400 mt-6">{t("common.demoNote", "DEMO版本 · 数据仅本地存储")}</p>
         </div>
       </div>
     );
@@ -47,15 +49,15 @@ const NDAPage: React.FC = () => {
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
           <span className="text-5xl">🌉</span>
-          <h1 className="text-2xl font-bold text-gray-800 mt-3">融智桥</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mt-3">{t("app.name", "融智桥")}</h1>
           <p className="text-gray-500 mt-1">
-            欢迎，{user?.name || user?.phone}
+            {t("nda.welcome", "欢迎，")}{user?.name || user?.phone}
           </p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <h3 className="font-bold text-gray-800 mb-4 text-center">
-            {userRoles.length > 0 ? "选择角色进入平台" : "您还未注册角色"}
+            {userRoles.length > 0 ? t("nda.chooseRole", "选择角色进入平台") : t("nda.noRole", "您还未注册角色")}
           </h3>
 
           {userRoles.length > 0 && (
@@ -82,26 +84,26 @@ const NDAPage: React.FC = () => {
 
           <div className="flex flex-col gap-2">
             <Button onClick={() => navigate("/onboarding")} variant="primary">
-              {userRoles.length > 0 ? "📝 注册新角色" : "🚀 开始入驻"}
+              {userRoles.length > 0 ? t("nda.registerNewRole", "📝 注册新角色") : t("nda.startOnboard", "🚀 开始入驻")}
             </Button>
 
             {userRoles.length > 0 && (
               <Button onClick={() => navigate("/hub")} variant="secondary">
-                🏠 进入平台大厅
+                {t("nda.enterHub", "🏠 进入平台大厅")}
               </Button>
             )}
 
             <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
               <button onClick={handleLogout}
                 className="flex-1 text-sm text-gray-500 hover:text-red-600 px-3 py-2 rounded-lg border border-gray-200 hover:border-red-300 transition-all">
-                🚪 退出登录
+                {t("common.logout", "🚪 退出登录")}
               </button>
             </div>
           </div>
         </div>
 
         <p className="text-center mt-6 text-xs text-gray-400">
-          DEMO版本 · 手机号 {user?.phone || ""} · 数据仅本地存储
+          {t("nda.phoneNote", "DEMO版本 · 手机号 {phone} · 数据仅本地存储", { phone: user?.phone || "" })}
         </p>
       </div>
     </div>

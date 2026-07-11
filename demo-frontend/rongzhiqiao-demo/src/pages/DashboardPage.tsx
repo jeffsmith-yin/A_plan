@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageContainer, StatCard, DemoBadge, Button } from "../components/Common";
+import { useT } from "../i18n";
 import {
   getRoles, getMessages, getPersons, kickPerson, unkickPerson,
   isCurrentUserAdmin, isCurrentUserSuperAdmin, getCurrentUser, maskPhone, getDesensitizeRules,
@@ -10,6 +11,7 @@ import {
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const t = useT();
   const isAdmin = isCurrentUserAdmin();
   const user = getCurrentUser();
   const [stats, setStats] = useState({ experts: 0, enterprises: 0, ai: 0, platforms: 0, total: 0, messages: 0, persons: 0, desensitizeRules: 0, ndaSigned: 0, ndaTotal: 0, settlementCount: 0, settlementTotal: 0 });
@@ -55,37 +57,37 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <PageContainer title="平台数据看板">
+    <PageContainer title={t("dash.title", "平台数据看板")}>
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center gap-2 mb-6">
           <DemoBadge />
-          <span className="text-xs text-gray-400">实时统计（当前浏览器数据）</span>
+          <span className="text-xs text-gray-400">{t("dash.realtime", "实时统计（当前浏览器数据）")}</span>
         </div>
 
         {/* 四方角色统计 */}
         <div className="grid grid-cols-4 gap-4 mb-6">
-          <StatCard label="🌉 平台方" value={stats.platforms} suffix="人" />
-          <StatCard label="👤 行业专家" value={stats.experts} suffix="人" />
-          <StatCard label="🤖 AI人才" value={stats.ai} suffix="人" />
-          <StatCard label="🏢 企业客户" value={stats.enterprises} suffix="家" />
+          <StatCard label={t("dash.platforms", "🌉 平台方")} value={stats.platforms} suffix={t("dash.unitPeople", "人")} />
+          <StatCard label={t("dash.experts", "👤 行业专家")} value={stats.experts} suffix={t("dash.unitPeople", "人")} />
+          <StatCard label={t("dash.ai", "🤖 AI人才")} value={stats.ai} suffix={t("dash.unitPeople", "人")} />
+          <StatCard label={t("dash.enterprises", "🏢 企业客户")} value={stats.enterprises} suffix={t("dash.unitFirms", "家")} />
         </div>
 
         <div className="grid grid-cols-4 gap-4 mb-6">
-          <StatCard label="成员总数" value={stats.total} suffix="人" />
-          <StatCard label="注册用户" value={stats.persons} suffix="人" />
-          <StatCard label="消息总数" value={stats.messages} suffix="条" />
-          <StatCard label="脱敏规则" value={stats.desensitizeRules} suffix="条" />
+          <StatCard label={t("dash.totalMembers", "成员总数")} value={stats.total} suffix={t("dash.unitPeople", "人")} />
+          <StatCard label={t("dash.registeredUsers", "注册用户")} value={stats.persons} suffix={t("dash.unitPeople", "人")} />
+          <StatCard label={t("dash.messages", "消息总数")} value={stats.messages} suffix={t("dash.unitItems", "条")} />
+          <StatCard label={t("dash.desensitizeRules", "脱敏规则")} value={stats.desensitizeRules} suffix={t("dash.unitItems", "条")} />
         </div>
 
         {/* 模拟交易量（演示数据） */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-          <h3 className="font-bold text-gray-800 mb-4">📈 交易量统计（演示数据）</h3>
+          <h3 className="font-bold text-gray-800 mb-4">{t("dash.tradeStats", "📈 交易量统计（演示数据）")}</h3>
           <div className="grid grid-cols-4 gap-4">
             {[
-              { label: "今日交易", value: 12, unit: "笔" },
-              { label: "本周交易", value: 68, unit: "笔" },
-              { label: "本月交易", value: 245, unit: "笔" },
-              { label: "年度交易", value: 2940, unit: "笔" },
+              { label: t("dash.todayTrade", "今日交易"), value: 12, unit: t("dash.unitBills", "笔") },
+              { label: t("dash.weekTrade", "本周交易"), value: 68, unit: t("dash.unitBills", "笔") },
+              { label: t("dash.monthTrade", "本月交易"), value: 245, unit: t("dash.unitBills", "笔") },
+              { label: t("dash.yearTrade", "年度交易"), value: 2940, unit: t("dash.unitBills", "笔") },
             ].map((item) => (
               <div key={item.label} className="text-center">
                 <div className="text-2xl font-bold text-primary-700">{item.value}</div>
@@ -94,19 +96,19 @@ const DashboardPage: React.FC = () => {
             ))}
           </div>
           <div className="text-center mt-3">
-            <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">🟡 演示数据 · 正式版由客户注入真实数据</span>
+            <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">{t("dash.demoDataNote", "🟡 演示数据 · 正式版由客户注入真实数据")}</span>
           </div>
         </div>
 
         {/* 环比（演示数据） */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-          <h3 className="font-bold text-gray-800 mb-4">📊 环比增长（演示数据）</h3>
+          <h3 className="font-bold text-gray-800 mb-4">{t("dash.momGrowth", "📊 环比增长（演示数据）")}</h3>
           <div className="grid grid-cols-4 gap-4">
             {[
-              { label: "专家月环比", value: "+12.5%" },
-              { label: "企业月环比", value: "+18.3%" },
-              { label: "AI人才月环比", value: "+8.7%" },
-              { label: "交易量月环比", value: "+22.1%" },
+              { label: t("dash.expertMom", "专家月环比"), value: "+12.5%" },
+              { label: t("dash.enterpriseMom", "企业月环比"), value: "+18.3%" },
+              { label: t("dash.aiMom", "AI人才月环比"), value: "+8.7%" },
+              { label: t("dash.tradeMom", "交易量月环比"), value: "+22.1%" },
             ].map((item) => (
               <div key={item.label} className="text-center">
                 <div className="text-xl font-bold text-green-600">{item.value}</div>
@@ -115,30 +117,30 @@ const DashboardPage: React.FC = () => {
             ))}
           </div>
           <div className="text-center mt-3">
-            <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">🟡 演示数据</span>
+            <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">{t("dash.demoShort", "🟡 演示数据")}</span>
           </div>
         </div>
 
         {/* 保密协议签署情况 */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-800">🔒 保密协议签署情况</h3>
-            <span className="text-xs text-gray-400">DEMO 参与方 NDA</span>
+            <h3 className="font-bold text-gray-800">{t("dash.ndaTitle", "🔒 保密协议签署情况")}</h3>
+            <span className="text-xs text-gray-400">{t("dash.ndaDemo", "DEMO 参与方 NDA")}</span>
           </div>
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{stats.ndaSigned}</div>
-              <div className="text-xs text-gray-500 mt-1">已签署（人）</div>
+              <div className="text-xs text-gray-500 mt-1">{t("dash.ndaSigned", "已签署（人）")}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-700">{stats.ndaTotal}</div>
-              <div className="text-xs text-gray-500 mt-1">参与方总数</div>
+              <div className="text-xs text-gray-500 mt-1">{t("dash.ndaTotal", "参与方总数")}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-primary-700">
                 {stats.ndaTotal > 0 ? Math.round((stats.ndaSigned / stats.ndaTotal) * 100) : 0}%
               </div>
-              <div className="text-xs text-gray-500 mt-1">签署率</div>
+              <div className="text-xs text-gray-500 mt-1">{t("dash.ndaRate", "签署率")}</div>
             </div>
           </div>
           {getNDARecords().filter(r => r.expiresAt > Date.now()).length > 0 ? (
@@ -146,35 +148,35 @@ const DashboardPage: React.FC = () => {
               {getNDARecords().filter(r => r.expiresAt > Date.now()).slice(0, 8).map(r => (
                 <div key={r.id} className="flex items-center justify-between text-sm py-1 border-t border-gray-50">
                   <span>{ROLE_LABELS[r.role]?.icon} {r.signerName}</span>
-                  <span className="text-xs text-gray-400">签署于 {new Date(r.signedAt).toLocaleDateString("zh-CN")}</span>
+                  <span className="text-xs text-gray-400">{t("dash.signedOn", "签署于")} {new Date(r.signedAt).toLocaleDateString("zh-CN")}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-center text-gray-400 text-sm py-2">暂无签署记录</p>
+            <p className="text-center text-gray-400 text-sm py-2">{t("dash.noNda", "暂无签署记录")}</p>
           )}
         </div>
 
         {/* 区块链自动结算概览 */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-800">⛓ 区块链自动结算概览</h3>
+            <h3 className="font-bold text-gray-800">{t("dash.settleTitle", "⛓ 区块链自动结算概览")}</h3>
             <button onClick={() => navigate("/settlement")}
               className="text-xs text-primary-600 hover:text-primary-700 px-3 py-1.5 rounded-lg border border-primary-200">
-              查看账本 →
+              {t("dash.viewLedger", "查看账本 →")}
             </button>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary-700">{stats.settlementCount}</div>
-              <div className="text-xs text-gray-500 mt-1">已结算笔数</div>
+              <div className="text-xs text-gray-500 mt-1">{t("dash.settleCount", "已结算笔数")}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-primary-700">¥{stats.settlementTotal.toLocaleString()}</div>
-              <div className="text-xs text-gray-500 mt-1">累计结算金额</div>
+              <div className="text-xs text-gray-500 mt-1">{t("dash.settleTotal", "累计结算金额")}</div>
             </div>
           </div>
-          <p className="text-xs text-gray-400 mt-3 text-center">按合约规则（平台10% / 专家60% / AI 30%）自动分账上链</p>
+          <p className="text-xs text-gray-400 mt-3 text-center">{t("dash.settleRule", "按合约规则（平台10% / 专家60% / AI 30%）自动分账上链")}</p>
         </div>
 
         {/* 超管：子管理员管理 */}

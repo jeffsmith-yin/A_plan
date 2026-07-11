@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useT } from "../i18n";
 import { useNavigate } from "react-router-dom";
 import { PageContainer, Button, DemoBadge } from "../components/Common";
 import {
@@ -19,6 +20,7 @@ const DEMO_SEED = [
 ];
 
 const SettlementPage: React.FC = () => {
+  const t = useT();
   const navigate = useNavigate();
   const [list, setList] = useState(getSettlements());
   const [amount, setAmount] = useState("");
@@ -48,7 +50,7 @@ const SettlementPage: React.FC = () => {
   const sorted = [...list].sort((a, b) => b.blockNumber - a.blockNumber);
 
   return (
-    <PageContainer title="区块链自动结算">
+    <PageContainer title={t("settle.title", "区块链自动结算")}>
       <div className="max-w-3xl mx-auto space-y-4">
         <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-xl px-4 py-2.5 border border-gray-200">
           <DemoBadge />

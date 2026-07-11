@@ -1,14 +1,17 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useT } from "../i18n";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 interface Props {
   children: React.ReactNode;
 }
 
 /** DEMO数据标注徽章 */
-export const DemoBadge: React.FC = () => (
-  <span className="demo-badge">演示数据</span>
-);
+export const DemoBadge: React.FC = () => {
+  const t = useT();
+  return <span className="demo-badge">{t("common.demoData", "演示数据")}</span>;
+};
 
 /** 页面容器 */
 export const PageContainer: React.FC<Props & { title?: string }> = ({
@@ -16,21 +19,25 @@ export const PageContainer: React.FC<Props & { title?: string }> = ({
   title,
 }) => {
   const navigate = useNavigate();
+  const t = useT();
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🌉</span>
-            <span className="font-bold text-lg text-gray-800">融智桥</span>
+            <span className="font-bold text-lg text-gray-800">
+              {t("app.name", "融智桥")}
+            </span>
             <span className="text-xs text-gray-400 border border-gray-200 rounded px-2 py-0.5">
-              DEMO
+              {t("common.demo", "DEMO")}
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <LanguageSwitcher />
             <DemoBadge />
             <span className="text-xs text-gray-400">
-              有效期至 2026-08-08
+              {t("common.validUntil", "有效期至")} 2026-08-08
             </span>
           </div>
         </div>
@@ -40,17 +47,17 @@ export const PageContainer: React.FC<Props & { title?: string }> = ({
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary-600 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-all"
-            title="返回上一页"
+            title={t("common.back", "返回")}
           >
-            ← 返回
+            ← {t("common.back", "返回")}
           </button>
           <span className="text-gray-300">|</span>
           <button
             onClick={() => navigate("/hub")}
             className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary-600 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-all"
-            title="回到首页"
+            title={t("common.home", "首页")}
           >
-            🏠 首页
+            🏠 {t("common.home", "首页")}
           </button>
           <h1 className="text-2xl font-bold text-gray-800 ml-2">{title}</h1>
         </div>

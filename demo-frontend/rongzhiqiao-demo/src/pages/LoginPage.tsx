@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/Common";
+import { useT } from "../i18n";
 import {
   isLoggedIn, registerPerson, getPersonByPhone, getPersonByName,
   clearAllData, ensureSuperAdmin, updatePerson, getPersons,
@@ -12,6 +13,7 @@ const SUPER_PASS = SUPER_ADMIN_CRED.password;
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const t = useT();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loginType, setLoginType] = useState<"name" | "phone">("name"); // 用户名 or 手机号
   const [username, setUsername] = useState("");
@@ -34,8 +36,8 @@ const LoginPage: React.FC = () => {
   // 验证码倒计时
   useEffect(() => {
     if (countdown <= 0) return;
-    const t = setTimeout(() => setCountdown(countdown - 1), 1000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    return () => clearTimeout(timer);
   }, [countdown]);
 
   const handleSendCode = () => {
@@ -126,9 +128,9 @@ const LoginPage: React.FC = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <span className="text-5xl">🌉</span>
-          <h1 className="text-2xl font-bold text-gray-800 mt-3">融智桥</h1>
-          <p className="text-gray-500 mt-1">AI驱动的四方协作平台</p>
-          <span className="text-xs text-gray-400 border border-gray-200 rounded px-2 py-0.5 mt-2 inline-block">DEMO</span>
+          <h1 className="text-2xl font-bold text-gray-800 mt-3">{t("app.name", "融智桥")}</h1>
+          <p className="text-gray-500 mt-1">{t("app.tagline", "AI驱动的四方协作平台")}</p>
+          <span className="text-xs text-gray-400 border border-gray-200 rounded px-2 py-0.5 mt-2 inline-block">{t("common.demo", "DEMO")}</span>
         </div>
 
         {/* 登录卡片 */}
@@ -138,11 +140,11 @@ const LoginPage: React.FC = () => {
             <button onClick={() => { setMode("login"); setError(""); }}
               className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 mode === "login" ? "bg-white shadow-md text-primary-700 ring-1 ring-gray-200" : "text-gray-400 hover:text-gray-600"
-              }`}>登录</button>
+              }`}>{t("login.tab.login", "登录")}</button>
             <button onClick={() => { setMode("register"); setError(""); }}
               className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 mode === "register" ? "bg-white shadow-md text-primary-700 ring-1 ring-gray-200" : "text-gray-400 hover:text-gray-600"
-              }`}>注册</button>
+              }`}>{t("login.tab.register", "注册")}</button>
           </div>
 
           {/* 登录方式切换：用户名 or 手机号 */}
@@ -150,33 +152,33 @@ const LoginPage: React.FC = () => {
             <button onClick={() => { setLoginType("name"); setError(""); }}
               className={`flex-1 py-1.5 rounded-lg border transition-all ${
                 loginType === "name" ? "bg-primary-50 border-primary-300 text-primary-700 font-medium" : "border-gray-200 text-gray-400"
-              }`}>👤 用户名登录</button>
+              }`}>{t("login.byName", "👤 用户名登录")}</button>
             <button onClick={() => { setLoginType("phone"); setError(""); }}
               className={`flex-1 py-1.5 rounded-lg border transition-all ${
                 loginType === "phone" ? "bg-primary-50 border-primary-300 text-primary-700 font-medium" : "border-gray-200 text-gray-400"
-              }`}>📱 手机号登录</button>
+              }`}>{t("login.byPhone", "📱 手机号登录")}</button>
           </div>
 
           {/* 用户名登录表单 */}
           {loginType === "name" && (
             <>
               <div className="bg-red-50 rounded-xl p-3 mb-4 border border-red-200">
-                <p className="text-sm text-red-700 font-medium mb-1">👑 超管快捷登录</p>
+                <p className="text-sm text-red-700 font-medium mb-1">{t("login.superHint", "👑 超管快捷登录")}</p>
                 <button onClick={() => { setUsername("admin"); setPassword("admin"); setError(""); }}
                   className="w-full py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
-                  一键填入 admin / admin
+                  {t("login.fillAdmin", "一键填入 admin / admin")}
                 </button>
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("login.username", "用户名")}</label>
                 <input type="text" value={username} onChange={e => setUsername(e.target.value)}
-                  placeholder="请输入用户名" autoComplete="off"
+                  placeholder={t("login.namePh", "请输入用户名")} autoComplete="off"
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 transition-all" />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("login.password", "密码")}</label>
                 <input type="text" value={password} onChange={e => setPassword(e.target.value)}
-                  placeholder="请输入密码（DEMO: admin）" autoComplete="off"
+                  placeholder={t("login.passwordPlaceholder", "请输入密码（DEMO: admin）")} autoComplete="off"
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 transition-all"
                   onKeyDown={e => e.key === "Enter" && handleSubmit()} />
               </div>
@@ -187,25 +189,25 @@ const LoginPage: React.FC = () => {
           {loginType === "phone" && (
             <>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">手机号</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("login.phone", "手机号")}</label>
                 <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-                  placeholder="请输入手机号" maxLength={11}
+                  placeholder={t("login.phonePh", "请输入手机号")} maxLength={11}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 transition-all" />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">验证码</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("login.code", "验证码")}</label>
                 <div className="flex gap-2">
                   <input type="text" value={code} onChange={e => setCode(e.target.value)}
-                    placeholder="请输入验证码" maxLength={6}
+                    placeholder={t("login.codePlaceholder", "请输入验证码")} maxLength={6}
                     className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 transition-all" />
                   <button onClick={handleSendCode} disabled={countdown > 0}
                     className={`shrink-0 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                       countdown > 0 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200"
                     }`}>
-                    {countdown > 0 ? `${countdown}s` : codeSent ? "重新发送" : "发送验证码"}
+                    {countdown > 0 ? `${countdown}s` : codeSent ? t("login.resend", "重新发送") : t("login.sendCode", "发送验证码")}
                   </button>
                 </div>
-                {codeSent && <p className="text-xs text-gray-400 mt-1">📢 DEMO验证码：123456</p>}
+                {codeSent && <p className="text-xs text-gray-400 mt-1">{t("login.demoCode", "📢 DEMO验证码：123456")}</p>}
               </div>
             </>
           )}
@@ -215,22 +217,22 @@ const LoginPage: React.FC = () => {
           )}
 
           <Button onClick={handleSubmit} size="lg" variant="primary">
-            {mode === "login" ? "🔓 登录" : "📝 注册并登录"}
+            {mode === "login" ? t("login.submit", "🔓 登录") : t("login.submitRegister", "📝 注册并登录")}
           </Button>
 
           {/* 微信登录 */}
           <div className="mt-6 pt-6 border-t border-gray-100">
-            <div className="text-center text-xs text-gray-400 mb-3">或使用以下方式登录</div>
+            <div className="text-center text-xs text-gray-400 mb-3">{t("login.otherMethods", "或使用以下方式登录")}</div>
             <button onClick={() => { alert("【DEMO】微信扫码登录（模拟）"); navigate("/nda"); }}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-green-200 text-green-700 hover:bg-green-50 transition-all text-sm font-medium">
               <span className="text-lg">💚</span>
-              微信扫码登录（DEMO模拟）
+              {t("login.wechat", "微信扫码登录（DEMO模拟）")}
             </button>
           </div>
         </div>
 
         <div className="text-center mt-6 text-xs text-gray-400 flex items-center justify-center gap-2">
-          <span>注册即表示同意融智桥服务条款 · DEMO版本</span>
+          <span>{t("login.agree", "注册即表示同意融智桥服务条款 · DEMO版本")}</span>
           <button
             onClick={() => {
               if (!window.confirm("⚠️ 确定清空所有数据？")) return;
@@ -239,7 +241,7 @@ const LoginPage: React.FC = () => {
               window.location.reload();
             }}
             className="text-red-400 hover:text-red-600 underline underline-offset-2"
-          >清空数据</button>
+          >{t("common.clearData", "清空数据")}</button>
         </div>
       </div>
     </div>

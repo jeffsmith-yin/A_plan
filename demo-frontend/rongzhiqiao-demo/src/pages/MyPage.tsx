@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageContainer, Button } from "../components/Common";
+import { useT } from "../i18n";
 import {
   getCurrentUser, updatePerson, getCurrentPhone, getUserRoles, getRoles, getWallet, requestWithdrawal,
   logout, deleteAccount, maskPhone, ROLE_LABELS, isCurrentUserSuperAdmin,
@@ -235,6 +236,7 @@ const AvatarEditor: React.FC<{
 // ─── 我的页面 ─────────────────────────────────────────────
 const MyPage: React.FC = () => {
   const navigate = useNavigate();
+  const t = useT();
   const user = getCurrentUser();
   const phone = getCurrentPhone();
   const userRoles = getUserRoles();
@@ -332,14 +334,14 @@ const MyPage: React.FC = () => {
 
   if (!user) {
     return (
-      <PageContainer title="我的">
-        <div className="text-center py-16 text-gray-500">请先登录</div>
+      <PageContainer title={t("my.title", "我的")}>
+        <div className="text-center py-16 text-gray-500">{t("my.pleaseLogin", "请先登录")}</div>
       </PageContainer>
     );
   }
 
   return (
-    <PageContainer title="我的">
+    <PageContainer title={t("my.title", "我的")}>
       <div className="max-w-md mx-auto space-y-4">
         {/* 头像 + 基本信息 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
@@ -357,12 +359,12 @@ const MyPage: React.FC = () => {
               </div>
             </div>
             <div>
-              <h2 className="font-bold text-lg text-gray-800">{user.name || "未设置姓名"}</h2>
+              <h2 className="font-bold text-lg text-gray-800">{user.name || t("my.noName", "未设置姓名")}</h2>
               <p className="text-sm text-gray-400">{maskPhone(phone || "")}</p>
-              {isSuperAdmin && <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full mt-1 inline-block">超级管理员</span>}
+              {isSuperAdmin && <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full mt-1 inline-block">{t("my.superAdmin", "超级管理员")}</span>}
             </div>
           </div>
-          <p className="text-xs text-gray-400">点击头像可拍照、从相册选择或删除</p>
+          <p className="text-xs text-gray-400">{t("my.avatarHint", "点击头像可拍照、从相册选择或删除")}</p>
         </div>
 
         {/* 头像编辑弹窗 */}
@@ -378,20 +380,20 @@ const MyPage: React.FC = () => {
 
         {/* 积分余额 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-          <h3 className="font-bold text-gray-800 mb-3">💰 积分余额</h3>
+          <h3 className="font-bold text-gray-800 mb-3">{t("my.pointsTitle", "💰 积分余额")}</h3>
           <div className="flex items-center justify-between">
             <div>
               <div className="text-3xl font-bold text-amber-600">{user.score}</div>
-              <div className="text-xs text-gray-400 mt-1">可用积分</div>
+              <div className="text-xs text-gray-400 mt-1">{t("my.availablePoints", "可用积分")}</div>
             </div>
             <div className="text-right text-xs text-gray-400">
-              <p>新成员 +10分</p>
-              <p>推荐一人 +2分</p>
+              <p>{t("my.newMember", "新成员 +10分")}</p>
+              <p>{t("my.referOne", "推荐一人 +2分")}</p>
             </div>
           </div>
           {userRoles.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-100">
-              <p className="text-xs text-gray-400 mb-2">各角色积分</p>
+              <p className="text-xs text-gray-400 mb-2">{t("my.rolePoints", "各角色积分")}</p>
               {userRoles.map(r => {
                 const meta = ROLE_LABELS[r.role];
                 return (
@@ -401,7 +403,7 @@ const MyPage: React.FC = () => {
                   </div>
                 );
               })}
-              <p className="text-xs text-gray-400 mt-2">我推荐了 <strong className="text-amber-600">{referralCount}</strong> 位成员（每位 +2 分）</p>
+              <p className="text-xs text-gray-400 mt-2">{t("my.referCount", "我推荐了 {n} 位成员（每位 +2 分）", { n: referralCount })}</p>
             </div>
           )}
         </div>
@@ -409,17 +411,17 @@ const MyPage: React.FC = () => {
         {/* 我的钱包 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-gray-800">💰 我的钱包</h3>
-            <span className="text-xs text-gray-400">合约结算自动到账</span>
+            <h3 className="font-bold text-gray-800">{t("my.walletTitle", "💰 我的钱包")}</h3>
+            <span className="text-xs text-gray-400">{t("my.walletAuto", "合约结算自动到账")}</span>
           </div>
           <div className="flex items-center justify-between">
             <div>
               <div className="text-3xl font-bold text-green-600">¥{wallet.balance.toLocaleString()}</div>
-              <div className="text-xs text-gray-400 mt-1">可用余额（来自 W3 合约自动结算）</div>
+              <div className="text-xs text-gray-400 mt-1">{t("my.walletBalance", "可用余额（来自 W3 合约自动结算）")}</div>
             </div>
             <div className="text-right text-xs text-gray-400">
-              <p>{wallet.entries.length} 笔结算</p>
-              {wallet.withdrawals.length > 0 && <p>{wallet.withdrawals.length} 笔提现</p>}
+              <p>{wallet.entries.length} {t("my.walletSettleCount", "笔结算")}</p>
+              {wallet.withdrawals.length > 0 && <p>{wallet.withdrawals.length} {t("my.walletWithdrawCount", "笔提现")}</p>}
             </div>
           </div>
 
@@ -427,15 +429,15 @@ const MyPage: React.FC = () => {
           <div className="flex gap-2 mt-4">
             <button onClick={() => { setShowWithdraw(v => !v); setWithdrawMsg(""); }}
               className="flex-1 bg-green-600 text-white text-sm font-medium py-2 rounded-xl hover:bg-green-700 transition-colors">
-              💸 提现
+              {t("my.withdraw", "💸 提现")}
             </button>
             <button onClick={exportWalletCSV}
               className="flex-1 bg-gray-100 text-gray-700 text-sm font-medium py-2 rounded-xl hover:bg-gray-200 transition-colors">
-              ⬇️ CSV
+              {t("my.exportCSV", "⬇️ CSV")}
             </button>
             <button onClick={exportWalletJSON}
               className="flex-1 bg-gray-100 text-gray-700 text-sm font-medium py-2 rounded-xl hover:bg-gray-200 transition-colors">
-              ⬇️ JSON
+              {t("my.exportJSON", "⬇️ JSON")}
             </button>
           </div>
 
@@ -443,26 +445,26 @@ const MyPage: React.FC = () => {
           {showWithdraw && (
             <div className="mt-3 p-3 bg-gray-50 rounded-xl space-y-2">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500 w-10">金额</span>
+                <span className="text-sm text-gray-500 w-10">{t("my.withdrawAmount", "金额")}</span>
                 <input type="number" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)}
-                  placeholder={`最多 ¥${wallet.balance.toLocaleString()}`}
+                  placeholder={`${t("my.maxAmount", "最多")} ¥${wallet.balance.toLocaleString()}`}
                   className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-green-400" />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500 w-10">方式</span>
+                <span className="text-sm text-gray-500 w-10">{t("my.withdrawMethod", "方式")}</span>
                 <select value={withdrawMethod} onChange={e => setWithdrawMethod(e.target.value)}
                   className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-green-400 bg-white">
-                  <option value="微信">微信</option>
-                  <option value="支付宝">支付宝</option>
-                  <option value="银行卡">银行卡</option>
+                  <option value="微信">{t("my.withdrawWechat", "微信")}</option>
+                  <option value="支付宝">{t("my.withdrawAlipay", "支付宝")}</option>
+                  <option value="银行卡">{t("my.withdrawBank", "银行卡")}</option>
                 </select>
               </div>
               {withdrawMsg && <p className="text-xs text-red-500">{withdrawMsg}</p>}
               <div className="flex gap-2">
                 <button onClick={handleWithdraw}
-                  className="flex-1 bg-green-600 text-white text-sm py-1.5 rounded-lg hover:bg-green-700 transition-colors">确认提现</button>
+                  className="flex-1 bg-green-600 text-white text-sm py-1.5 rounded-lg hover:bg-green-700 transition-colors">{t("my.confirmWithdraw", "确认提现")}</button>
                 <button onClick={() => { setShowWithdraw(false); setWithdrawMsg(""); }}
-                  className="flex-1 bg-white text-gray-500 text-sm py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">取消</button>
+                  className="flex-1 bg-white text-gray-500 text-sm py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">{t("my.cancel", "取消")}</button>
               </div>
             </div>
           )}
@@ -470,7 +472,7 @@ const MyPage: React.FC = () => {
           {/* 结算明细（最近 6 笔） */}
           {wallet.entries.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-100 space-y-1 max-h-44 overflow-y-auto">
-              <p className="text-xs text-gray-400 mb-1">结算到账（最近 6 笔）</p>
+              <p className="text-xs text-gray-400 mb-1">{t("my.settleTitle", "结算到账（最近 6 笔）")}</p>
               {[...wallet.entries].sort((a, b) => b.timestamp - a.timestamp).slice(0, 6).map(e => (
                 <div key={e.id} className="flex items-center justify-between text-sm py-0.5">
                   <span>{ROLE_LABELS[e.role]?.icon} {e.roleName}<span className="text-[10px] text-gray-300 ml-1">#{e.blockNumber}</span></span>
@@ -483,12 +485,12 @@ const MyPage: React.FC = () => {
           {/* 提现记录 */}
           {wallet.withdrawals.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-100 space-y-1 max-h-32 overflow-y-auto">
-              <p className="text-xs text-gray-400 mb-1">提现记录</p>
+              <p className="text-xs text-gray-400 mb-1">{t("my.withdrawRecords", "提现记录")}</p>
               {[...wallet.withdrawals].sort((a, b) => b.requestedAt - a.requestedAt).map(w => (
                 <div key={w.id} className="flex items-center justify-between text-sm py-0.5">
                   <span>💸 {w.method}{" "}
                     <span className={`text-[10px] px-1 rounded-full ${w.status === "done" ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"}`}>
-                      {w.status === "done" ? "已到账" : "处理中"}
+                      {w.status === "done" ? t("my.withdrawDone", "已到账") : t("my.withdrawProcessing", "处理中")}
                     </span>
                   </span>
                   <span className="font-medium text-gray-700">-¥{w.amount.toLocaleString()}</span>
@@ -497,7 +499,7 @@ const MyPage: React.FC = () => {
             </div>
           )}
 
-          <p className="text-[11px] text-gray-400 mt-2">💡 去产品市场下单并完成支付，分账将自动进入你的钱包；提现为 DEMO 演示。</p>
+          <p className="text-[11px] text-gray-400 mt-2">{t("my.walletHint", "💡 去产品市场下单并完成支付，分账将自动进入你的钱包；提现为 DEMO 演示。")}</p>
         </div>
 
         {/* 功能菜单 */}
@@ -506,8 +508,8 @@ const MyPage: React.FC = () => {
             className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-left">
             <span className="text-xl">🔒</span>
             <div className="flex-1">
-              <span className="font-medium text-gray-800 text-sm">保密协议 (NDA)</span>
-              <p className="text-xs text-gray-400">签署 / 续签 DEMO 保密协议</p>
+              <span className="font-medium text-gray-800 text-sm">{t("my.nda", "保密协议 (NDA)")}</span>
+              <p className="text-xs text-gray-400">{t("my.ndaDesc", "签署 / 续签 DEMO 保密协议")}</p>
             </div>
             <span className="text-gray-300">→</span>
           </button>
@@ -516,8 +518,8 @@ const MyPage: React.FC = () => {
             className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-left">
             <span className="text-xl">🏆</span>
             <div className="flex-1">
-              <span className="font-medium text-gray-800 text-sm">积分排行榜</span>
-              <p className="text-xs text-gray-400">查看成员积分与推荐</p>
+              <span className="font-medium text-gray-800 text-sm">{t("my.leaderboard", "积分排行榜")}</span>
+              <p className="text-xs text-gray-400">{t("my.leaderboardDesc", "查看成员积分与推荐")}</p>
             </div>
             <span className="text-gray-300">→</span>
           </button>
@@ -526,8 +528,8 @@ const MyPage: React.FC = () => {
             className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-left">
             <span className="text-xl">⚙️</span>
             <div className="flex-1">
-              <span className="font-medium text-gray-800 text-sm">设置</span>
-              <p className="text-xs text-gray-400">修改个人信息、角色和脱敏规则</p>
+              <span className="font-medium text-gray-800 text-sm">{t("my.settings", "设置")}</span>
+              <p className="text-xs text-gray-400">{t("my.settingsDesc", "修改个人信息、角色和脱敏规则")}</p>
             </div>
             <span className="text-gray-300">→</span>
           </button>
@@ -536,8 +538,8 @@ const MyPage: React.FC = () => {
             className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-left">
             <span className="text-xl">💬</span>
             <div className="flex-1">
-              <span className="font-medium text-gray-800 text-sm">帮助与反馈</span>
-              <p className="text-xs text-gray-400">常见问题、意见反馈</p>
+              <span className="font-medium text-gray-800 text-sm">{t("my.help", "帮助与反馈")}</span>
+              <p className="text-xs text-gray-400">{t("my.helpDesc", "常见问题、意见反馈")}</p>
             </div>
             <span className="text-gray-300">→</span>
           </button>
@@ -546,8 +548,8 @@ const MyPage: React.FC = () => {
             className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-left">
             <span className="text-xl">🔄</span>
             <div className="flex-1">
-              <span className="font-medium text-gray-800 text-sm">检查更新</span>
-              <p className="text-xs text-gray-400">v0.7.1 · 已是最新版本</p>
+              <span className="font-medium text-gray-800 text-sm">{t("my.checkUpdate", "检查更新")}</span>
+              <p className="text-xs text-gray-400">{t("my.checkUpdateDesc", "v0.7.1 · 已是最新版本")}</p>
             </div>
             <span className="text-gray-300">→</span>
           </button>
@@ -558,18 +560,18 @@ const MyPage: React.FC = () => {
           <button onClick={handleLogout}
             className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-left">
             <span className="text-xl">🚪</span>
-            <span className="font-medium text-gray-700 text-sm">退出登录</span>
+            <span className="font-medium text-gray-700 text-sm">{t("common.logout", "退出登录")}</span>
           </button>
           <button onClick={handleDeleteAccount}
             className="w-full flex items-center gap-3 px-6 py-4 hover:bg-red-50 transition-colors text-left">
             <span className="text-xl">⚠️</span>
-            <span className="font-medium text-red-500 text-sm">注销账号</span>
-            <span className="text-xs text-red-300 ml-auto">数据保留</span>
+            <span className="font-medium text-red-500 text-sm">{t("hub.deleteAccount", "注销账号")}</span>
+            <span className="text-xs text-red-300 ml-auto">{t("my.dataRetained", "数据保留")}</span>
           </button>
         </div>
 
         <p className="text-center text-xs text-gray-400 py-4">
-          融智桥 DEMO v0.7.1 · 数据仅本地存储
+          {t("my.footer", "融智桥 DEMO v0.7.1 · 数据仅本地存储")}
         </p>
       </div>
     </PageContainer>
