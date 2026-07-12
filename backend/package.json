@@ -1,0 +1,11 @@
+{
+  "name": "rongzhiqiao-backend",
+  "version": "0.1.0",
+  "description": "融智桥 MVP 后端：账号/角色/NDA/购物车/结算/分账/钱包/数据看板（零依赖 node:http）",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node test/api-test.js"
+  },
+  "dependencies": {}
+}

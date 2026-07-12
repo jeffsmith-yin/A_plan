@@ -47,3 +47,4 @@ yarn-error.log*
 
 # ============ 运行时数据（agent-expert 本地持久化，非源码） ============
 agent-expert/data/
+backend/data/

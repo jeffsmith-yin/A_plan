@@ -5,7 +5,8 @@ import { useT } from "../i18n";
 import {
   isLoggedIn, registerPerson, getPersonByPhone, getPersonByName,
   clearAllData, ensureSuperAdmin, updatePerson, getPersons,
-  SUPER_ADMIN_CRED,
+  SUPER_ADMIN_CRED, checkApiAvailable, isApiAvailable,
+  registerPersonAsync, loginPersonAsync,
 } from "../data/store";
 
 const SUPER_NAME = SUPER_ADMIN_CRED.username;
@@ -31,6 +32,10 @@ const LoginPage: React.FC = () => {
       if (p && p.avatarRoles.length > 0) navigate("/hub", { replace: true });
       else navigate("/nda", { replace: true });
     }
+    // 检测后端 API 是否可达
+    checkApiAvailable().then(avail => {
+      if (avail) console.log('[API] 后端已连接，将同步数据到服务器')
+    })
   }, []);
 
   // 验证码倒计时
@@ -105,6 +110,8 @@ const LoginPage: React.FC = () => {
 
     if (mode === "register") {
       const person = registerPerson(phone);
+      // API 同步（后端可达时自动注册）
+      if (isApiAvailable()) registerPersonAsync(phone, 'demo123').catch(() => {})
       if (person.kicked) { setError("该账号已被管理员禁用"); return; }
       navigate("/nda");
     } else {
@@ -112,6 +119,8 @@ const LoginPage: React.FC = () => {
       if (!person) { setMode("register"); setError(`手机号 ${phone} 未注册，已自动切换到注册模式。`); return; }
       if (person.kicked) { setError("该账号已被管理员禁用"); return; }
       registerPerson(phone);
+      // API 同步
+      if (isApiAvailable()) loginPersonAsync(phone, 'demo123').catch(() => {})
       if (person.avatarRoles.length > 0) navigate("/hub");
       else navigate("/nda");
     }

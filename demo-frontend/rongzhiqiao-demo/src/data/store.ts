@@ -1,5 +1,29 @@
-// 融智桥 DEMO v0.7
+// 融智桥 DEMO v0.8
 // 四方角色 + 权限控制 + 推荐人 + @提及 + 积分 + 文件管理 + 购物车 + 两级注册 + 脱敏
+// v0.8: API 适配层（后端可达 → fetch API；不可达 → localStorage fallback）
+
+import {
+  setToken as apiSetToken, getToken as apiGetToken,
+  isBackendAvailable, apiRegister, apiLogin, apiMe,
+  apiCreateRole, apiDeleteRole,
+  apiGetNDA, apiSignNDA, apiRenewNDA,
+  apiGetCart, apiAddToCart, apiRemoveFromCart, apiCheckout,
+  apiGetOrders, apiGetWallet, apiWithdraw,
+  apiGetDashboard, apiGetAudit,
+  setApiBase, getApiBase
+} from '../services/api'
+
+// API 可用标记（启动时检测一次）
+let _apiAvailable = false
+let _apiChecked = false
+export async function checkApiAvailable(): Promise<boolean> {
+  if (_apiChecked) return _apiAvailable
+  _apiAvailable = await isBackendAvailable()
+  _apiChecked = true
+  return _apiAvailable
+}
+export function isApiAvailable(): boolean { return _apiAvailable }
+export { setApiBase, getApiBase, apiSetToken as setApiToken, apiGetToken as getApiToken }
 
 export type RoleType = "expert" | "ai" | "enterprise" | "platform";
 export type SecondaryRole = "expert" | "ai" | "enterprise" | null;
@@ -1192,3 +1216,107 @@ export function getProductsSortedByPopularity(): Product[] {
   // DEMO: 模拟热度排序（ID顺序）
   return [...getDemoProducts()].sort((a, b) => a.id.localeCompare(b.id));
 }
+
+// ============ API 适配层（v0.8）============
+// 后端可达时走 API，不可达时自动 fallback localStorage（原逻辑不变）
+// 页面组件无需改动——这些 async 包装器由 LoginPage 等入口调用
+
+export async function registerPersonAsync(phone: string, password?: string, name?: string): Promise<{ person: Person; token?: string } | null> {
+  if (!_apiAvailable) return null
+  const r = await apiRegister(phone, password || 'demo123', name || phone)
+  if (!r || r.status !== 201) return null
+  const token = r.json.token
+  if (token) apiSetToken(token)
+  // 同步到 localStorage（UI 兼容）
+  const person = registerPerson(phone)
+  if (r.json.user) {
+    person.name = r.json.user.name || person.name
+    person.isAdmin = r.json.user.isAdmin
+    person.isSuperAdmin = r.json.user.isSuperAdmin
+  }
+  savePersons(getPersons())
+  return { person, token }
+}
+
+export async function loginPersonAsync(phone: string, password: string): Promise<{ person: Person; token?: string } | null> {
+  if (!_apiAvailable) return null
+  const r = await apiLogin(phone, password)
+  if (!r || r.status !== 200) return null
+  const token = r.json.token
+  if (token) apiSetToken(token)
+  const person = registerPerson(phone)
+  if (r.json.user) {
+    person.name = r.json.user.name || person.name
+    person.isAdmin = r.json.user.isAdmin
+    person.isSuperAdmin = r.json.user.isSuperAdmin
+  }
+  savePersons(getPersons())
+  return { person, token }
+}
+
+export async function saveRoleAsync(role: RoleCard): Promise<RoleCard | null> {
+  if (!_apiAvailable) return null
+  const r = await apiCreateRole(role)
+  if (!r || r.status !== 200) return null
+  return saveRole(role)
+}
+
+export async function deleteRoleAsync(id: string): Promise<boolean> {
+  if (!_apiAvailable) return false
+  const r = await apiDeleteRole(id)
+  if (!r || r.status !== 200) return false
+  deleteRole(id)
+  return true
+}
+
+export async function signNDAAsync(roleId: string, signerName: string, role: RoleType): Promise<NDARecord | null> {
+  if (!_apiAvailable) return null
+  const r = await apiSignNDA(roleId, signerName, role)
+  if (!r || r.status !== 200) return null
+  return signNDA(roleId, signerName, role)
+}
+
+export async function renewNDAAsync(roleId: string): Promise<NDARecord | null> {
+  if (!_apiAvailable) return null
+  const r = await apiRenewNDA(roleId)
+  if (!r || r.status !== 200) return null
+  return renewNDA(roleId)
+}
+
+export async function addToCartAsync(product: Product): Promise<boolean> {
+  if (!_apiAvailable) return false
+  const r = await apiAddToCart(product.id)
+  if (!r || r.status !== 200) return false
+  addToCart(product)
+  return true
+}
+
+export async function checkoutAsync(): Promise<any | null> {
+  if (!_apiAvailable) return null
+  const r = await apiCheckout()
+  if (!r || r.status !== 200) return null
+  clearCart()
+  return r.json
+}
+
+export async function getWalletAsync(): Promise<any | null> {
+  if (!_apiAvailable) return null
+  const r = await apiGetWallet()
+  if (!r || r.status !== 200) return null
+  return r.json
+}
+
+export async function withdrawAsync(amount: number, method: string): Promise<any | null> {
+  if (!_apiAvailable) return null
+  const r = await apiWithdraw(amount, method)
+  if (!r || r.status !== 200) return null
+  return r.json
+}
+
+export async function getDashboardAsync(): Promise<any | null> {
+  if (!_apiAvailable) return null
+  const r = await apiGetDashboard()
+  if (!r || r.status !== 200) return null
+  return r.json
+}
+
