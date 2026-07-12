@@ -330,6 +330,17 @@ async function run() {
     assert.ok(/^[0-9a-f]{64}$/.test(r.json.auditRef), '注入应返回审计交易哈希')
   })
 
+  await rec('注入适配层接缝：经 DemoInjectionAdapter 执行且返回绑定/审计', '激活', 'P1', async (t) => {
+    const r = await req('POST', '/inject', { skillId: 'SK-007' }, authH(memberToken)) // SK-007 已购买（演示态）
+    t.expected = '200 adapter=DemoInjectionAdapter，含 bindingId/auditRef'
+    t.actual = `status=${r.status} adapter=${r.json?.adapter} state=${r.json?.state}`
+    assert.strictEqual(r.status, 200)
+    assert.strictEqual(r.json.state, 'activated')
+    assert.strictEqual(r.json.adapter, 'DemoInjectionAdapter', '应经默认演示适配层执行')
+    assert.ok(r.json.bindingId && typeof r.json.bindingId === 'string', '应返回绑定 ID')
+    assert.ok(/^[0-9a-f]{64}$/.test(r.json.auditRef), '注入应返回审计交易哈希')
+  })
+
   await rec('演示态/激活态切换：/my-skills 反映状态', '激活', 'P1', async (t) => {
     const r = await req('GET', '/my-skills', undefined, authH(memberToken))
     t.expected = 'SK-001=activated'

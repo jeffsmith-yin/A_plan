@@ -80,6 +80,13 @@ export function setActivated(sub, skillId, dataSource) {
   return store[sub][skillId]
 }
 
+// 状态文案（供 CLI / UI 复用）
+export const STATE_LABEL = {
+  none: '未拥有',
+  demo: '演示态(已购)',
+  activated: '激活态(已注入真实数据)'
+}
+
 export function resetActivations() {
   ensure()
   if (existsSync(FILE)) writeFileSync(FILE, '{}')
