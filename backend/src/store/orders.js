@@ -2,7 +2,7 @@
 // 订单模型：Order = {id, phone, items, total, status, createdAt, paidAt}
 // 分账规则：平台 10% / 专家 60% / AI 30%
 import { loadJson, saveJson } from '../lib/persist.js'
-import { recordSettlement, recordSplit } from '../audit.js'
+import { recordSettlement, recordSplit } from '../blockchain/index.js'
 import { creditWallet, getWallet } from './wallet.js'
 
 const FILE = 'orders.json'
@@ -32,7 +32,7 @@ export function createOrder(phone, items, total) {
 }
 
 // 支付订单 → 自动结算分账
-export function payOrder(orderId, phone) {
+export async function payOrder(orderId, phone) {
   const orders = load()
   const idx = orders.findIndex((o) => o.id === orderId)
   if (idx === -1) return { ok: false, error: '订单不存在' }
@@ -60,8 +60,8 @@ export function payOrder(orderId, phone) {
     { role: 'expert', amount: expertAmt },
     { role: 'ai', amount: aiAmt }
   ]
-  recordSettlement(phone, { orderId, total: order.total, splits })
-  const audit = recordSplit(phone, orderId, splits)
+  await recordSettlement(phone, { orderId, total: order.total, splits })
+  const audit = await recordSplit(phone, orderId, splits)
 
   return { ok: true, order, splits, auditRef: audit.txHash }
 }

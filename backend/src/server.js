@@ -12,7 +12,8 @@ import { listCart, addToCart, removeFromCart, clearCart, checkoutCart } from './
 import { getOrders, createOrder, payOrder } from './store/orders.js'
 import { getWallet, requestWithdrawal } from './store/wallet.js'
 import { getDashboard } from './store/dashboard.js'
-import { getLedger, verifyLedger } from './audit.js'
+import { getLedger, verifyLedger } from './audit.js' // 保留兼容旧接口
+import { queryAllLedger, verifyLedger as bcVerifyLedger, getBlockchainInfo, initBlockchain } from './blockchain/index.js'
 import { proxyExpertRequest } from './expert-proxy.js'
 
 const PORT = process.env.PORT || 3100
@@ -98,11 +99,11 @@ router.add('POST', '/api/cart/remove', async (auth, req, res, rl) => {
   return sendJson(res, 200, r, rl)
 }, true)
 
-router.add('POST', '/api/cart/checkout', (auth, _, res, rl) => {
+router.add('POST', '/api/cart/checkout', async (auth, _, res, rl) => {
   const cart = checkoutCart(auth.sub)
   if (!cart.orderId) return sendJson(res, 200, cart, rl)
   const order = createOrder(auth.sub, cart.lines, cart.total)
-  const paid = payOrder(order.id, auth.sub)
+  const paid = await payOrder(order.id, auth.sub)
   return sendJson(res, 200, { ...cart, order, paid, auditRef: paid.auditRef }, rl)
 }, true)
 
@@ -129,6 +130,20 @@ router.add('GET', '/api/dashboard', () => {
 router.add('GET', '/api/audit', (auth) => {
   if (!auth.isSuperAdmin && !auth.isAdmin) return { status: 403, body: { error: 'forbidden: admin only' } }
   return { status: 200, body: { entries: getLedger(), ledger: verifyLedger() } }
+}, true)
+
+// 区块链信息端点（新增）
+router.add('GET', '/api/blockchain/info', () => {
+  return { status: 200, body: getBlockchainInfo() }
+}, true)
+
+router.add('GET', '/api/blockchain/ledger', (auth) => {
+  if (!auth.isSuperAdmin && !auth.isAdmin) return { status: 403, body: { error: 'forbidden: admin only' } }
+  return queryAllLedger().then(entries => ({ status: 200, body: { entries } }))
+}, true)
+
+router.add('GET', '/api/blockchain/verify', () => {
+  return bcVerifyLedger().then(result => ({ status: 200, body: result }))
 }, true)
 
 // —— HTTP 服务 ——
@@ -187,6 +202,8 @@ const server = http.createServer(async (req, res) => {
   }
 })
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
+  // 初始化区块链适配器
+  await initBlockchain()
   console.log(`融智桥 MVP 后端已启动：http://localhost:${PORT}（零依赖 node:http，鉴权/限流/审计已启用）`)
 })

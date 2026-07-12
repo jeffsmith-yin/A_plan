@@ -1,7 +1,6 @@
 // 融智桥 MVP 后端 · 零依赖 API 综合测试套件
-// 覆盖：功能 / 安全（鉴权·限流·体限）/ 审计（哈希链）
+// 覆盖：功能 / 安全（鉴权·限流·体限）/ 审计（哈希链）/ 区块链适配层
 // 运行：node test/api-test.js（自动拉起服务、跑完自清，退出码 0=通过 / 1=失败 / 3=超时兜底）
-import { spawn } from 'node:child_process'
 import { performance } from 'node:perf_hooks'
 import { rmSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -313,7 +312,44 @@ async function run() {
     assert.strictEqual(r.status, 403)
   })
 
-  // ===== J. 安全杂项 =====
+  // ===== J. 区块链适配层 =====
+  await rec('GET /api/blockchain/info 获取链信息 → 200', '区块链', 'P0', async (t) => {
+    const r = await req('GET', '/api/blockchain/info', undefined, authH(token))
+    t.expected = '200 含 name/connected/blockNumber'
+    t.actual = `status=${r.status} name=${r.json?.name} connected=${r.json?.connected}`
+    assert.strictEqual(r.status, 200)
+    assert.ok(typeof r.json.name === 'string', '链名称应为字符串')
+    assert.ok(typeof r.json.connected === 'boolean', '连接状态应为布尔值')
+  })
+
+  await rec('GET /api/blockchain/verify 链完整性验证 → 200', '区块链', 'P0', async (t) => {
+    const r = await req('GET', '/api/blockchain/verify', undefined, authH(token))
+    t.expected = '200 ok=true entries>=0'
+    t.actual = `status=${r.status} ok=${r.json?.ok} entries=${r.json?.entries}`
+    assert.strictEqual(r.status, 200)
+    assert.ok(r.json.ok, '链完整性验证应通过')
+  })
+
+  await rec('GET /api/blockchain/ledger 超管查看链上账本 → 200', '区块链', 'P0', async (t) => {
+    const r = await req('GET', '/api/blockchain/ledger', undefined, authH(token))
+    t.expected = '200 entries.length>0 含 settlement/split'
+    t.actual = `status=${r.status} entries=${r.json?.entries?.length}`
+    assert.strictEqual(r.status, 200)
+    assert.ok(r.json.entries.length > 0, '链上应至少有一条结算记录')
+    // 验证记录包含 txHash 和 type 字段
+    const e = r.json.entries[0]
+    assert.ok(e.txHash, '每条记录应含 txHash')
+    assert.ok(e.type, '每条记录应含 type')
+  })
+
+  await rec('GET /api/blockchain/ledger 非管理员 → 403', '安全', 'P1', async (t) => {
+    const r = await req('GET', '/api/blockchain/ledger', undefined, authH(token2))
+    t.expected = '403'
+    t.actual = `status=${r.status}`
+    assert.strictEqual(r.status, 403)
+  })
+
+  // ===== K. 安全杂项 =====
   await rec('畸形 JSON → 400', '安全', 'P1', async (t) => {
     const r = await req('POST', '/api/auth/login', '{bad', undefined)
     t.expected = '400'
@@ -336,7 +372,7 @@ async function run() {
     assert.strictEqual(r.status, 404)
   })
 
-  // ===== K. 性能 =====
+  // ===== L. 性能 =====
   await rec(`GET /api/health 响应 < ${SLA_MS}ms`, '性能', 'P1', async (t) => {
     const t0 = performance.now()
     const r = await req('GET', '/api/health')
@@ -362,32 +398,28 @@ async function run() {
   const fail = results.length - pass
   console.log('\n=== 测试汇总 ===')
   console.log(`总计 ${results.length} | 通过 ${pass} | 失败 ${fail}`)
-  console.log(`功能 ${results.filter((r) => r.category === '功能').length} | 安全 ${results.filter((r) => r.category === '安全').length} | 隔离 ${results.filter((r) => r.category === '隔离').length} | 审计 ${results.filter((r) => r.category === '审计').length} | 性能 ${results.filter((r) => r.category === '性能').length}`)
+  console.log(`功能 ${results.filter((r) => r.category === '功能').length} | 安全 ${results.filter((r) => r.category === '安全').length} | 隔离 ${results.filter((r) => r.category === '隔离').length} | 审计 ${results.filter((r) => r.category === '审计').length} | 区块链 ${results.filter((r) => r.category === '区块链').length} | 性能 ${results.filter((r) => r.category === '性能').length}`)
   console.log(`\n总体质量门禁：${fail === 0 ? 'PASS' : 'FAIL'}`)
-  await new Promise((r) => server.kill('SIGTERM', r))
-  process.exit(fail === 0 ? 0 : 1)
+  server.close(() => process.exit(fail === 0 ? 0 : 1))
 }
 
 // —— 启动服务并运行 ——
 const guard = setTimeout(() => {
   console.error('\n⛔ 测试超时兜底：强制退出')
-  if (server) server.kill('SIGKILL')
+  if (server) server.close()
   process.exit(3)
 }, 45000)
 guard.unref()
 
 rmSync(join(ROOT, 'data'), { recursive: true, force: true })
 
-server = spawn('node', [join(ROOT, 'src', 'server.js')], {
-  cwd: ROOT,
-  env: { ...process.env, PORT: String(PORT) }
+import('./wrap-server.js').then((wrap) => {
+  return wrap.createTestServer(PORT)
+}).then((srv) => {
+  server = srv
+  return waitReady()
+}).then(run).catch(async (e) => {
+  console.error('测试启动失败：', e.message)
+  if (server) server.close()
+  process.exit(2)
 })
-server.stderr.on('data', (d) => process.stderr.write('[server] ' + d))
-
-waitReady()
-  .then(run)
-  .catch(async (e) => {
-    console.error('测试启动失败：', e.message)
-    if (server) server.kill('SIGTERM')
-    process.exit(2)
-  })
