@@ -8,6 +8,7 @@ import crypto from 'node:crypto'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DATA = join(__dirname, '..', 'data')
 const AUDIT_FILE = join(DATA, 'settlement-audit.jsonl')
+const INJECTION_FILE = join(DATA, 'injection-audit.jsonl')
 const LEDGER_FILE = join(DATA, 'chain-ledger.jsonl')
 const GENESIS = '0'.repeat(64)
 let prevHash = GENESIS
@@ -49,12 +50,26 @@ export function recordSettlement(sub, settle) {
 }
 
 export function getAudit() {
-  if (!existsSync(AUDIT_FILE)) return []
-  return readFileSync(AUDIT_FILE, 'utf8')
-    .trim()
-    .split('\n')
-    .filter(Boolean)
-    .map((l) => JSON.parse(l))
+  const settlements = existsSync(AUDIT_FILE)
+    ? readFileSync(AUDIT_FILE, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l))
+    : []
+  const injections = existsSync(INJECTION_FILE)
+    ? readFileSync(INJECTION_FILE, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l))
+    : []
+  return { entries: settlements, injections, ledger: verifyLedger() }
+}
+
+// 记录一次「真实数据注入」（平台协助），写入注入审计 + 同一哈希链
+export function recordInjection(sub, skillId, dataSource) {
+  ensure()
+  const ts = new Date().toISOString()
+  const content = JSON.stringify({ type: 'injection', ts, sub, skillId, dataSource })
+  const hash = crypto.createHash('sha256').update(prevHash + '|' + content).digest('hex')
+  const entry = { type: 'injection', ts, sub, skillId, dataSource, txHash: hash, prevHash }
+  prevHash = hash
+  appendFileSync(INJECTION_FILE, JSON.stringify(entry) + '\n')
+  appendFileSync(LEDGER_FILE, JSON.stringify({ prevHash: entry.prevHash, hash, ts, sub, type: 'injection' }) + '\n')
+  return entry
 }
 
 // 校验哈希链连续性（演示存证完整性，篡改任一记录即断裂）
@@ -73,6 +88,7 @@ export function verifyLedger() {
 export function resetAudit() {
   ensure()
   if (existsSync(AUDIT_FILE)) writeFileSync(AUDIT_FILE, '')
+  if (existsSync(INJECTION_FILE)) writeFileSync(INJECTION_FILE, '')
   if (existsSync(LEDGER_FILE)) writeFileSync(LEDGER_FILE, '')
   prevHash = GENESIS
 }

@@ -6,7 +6,9 @@ import { loadKB } from './rag.js'
 import { addToCart, removeFromCart, listCart, clearCart, checkout } from './cart.js'
 import { login, authFromHeader } from './auth.js'
 import { rateLimit, rateLimitHeaders, RATE_LIMIT } from './ratelimit.js'
-import { recordSettlement, getAudit, verifyLedger } from './audit.js'
+import { recordSettlement, getAudit } from './audit.js'
+import { recordPurchase, listActivations } from './activation.js'
+import { injectRealData } from './injection.js'
 
 const PORT = process.env.PORT || 8787
 
@@ -225,11 +227,11 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, r, rlHeaders)
   }
 
-  // 痛点分析（公开，受限流保护）
+  // 痛点分析（公开，受限流保护；带鉴权时附带 per-user 演示态/激活态）
   if (req.method === 'POST' && req.url === '/analyze') {
     const data = await readJson(req, res)
     if (!data) return
-    return sendJson(res, 200, analyze(data.text || ''), rlHeaders)
+    return sendJson(res, 200, analyze(data.text || '', { sub: auth?.sub || null }), rlHeaders)
   }
 
   // 以下端点需鉴权
@@ -263,6 +265,7 @@ const server = http.createServer(async (req, res) => {
     if (!a) return
     const kb = loadKB()
     const settle = checkout(kb, a.sub)
+    recordPurchase(a.sub, settle.lines.map((l) => l.skillId)) // 购买 → 登记所有权（演示态）
     const audit = recordSettlement(a.sub, settle) // 结算审计 + 哈希链存证
     return sendJson(res, 200, { ...settle, auditRef: audit.txHash }, rlHeaders)
   }
@@ -274,12 +277,30 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, { ok: true }, rlHeaders)
   }
 
-  // 审计视图（仅 platform 角色）
+  // 我的技能包（按当前用户：演示态/激活态）
+  if (req.method === 'GET' && req.url === '/my-skills') {
+    const a = requireAuth()
+    if (!a) return
+    return sendJson(res, 200, { sub: a.sub, skills: listActivations(a.sub) }, rlHeaders)
+  }
+
+  // 真实数据注入（激活）：平台协助为客户注入真实数据 → 技能包翻为激活态（须先购买）
+  if (req.method === 'POST' && req.url === '/inject') {
+    const a = requireAuth()
+    if (!a) return
+    const data = await readJson(req, res)
+    if (!data) return
+    const r = injectRealData(a.sub, data.skillId, data.dataSource || null)
+    if (!r.ok) return sendJson(res, r.code === 'NOT_FOUND' ? 404 : 409, r, rlHeaders)
+    return sendJson(res, 200, r, rlHeaders)
+  }
+
+  // 审计视图（仅 platform 角色）：结算审计 + 注入审计 + 哈希链完整性
   if (req.method === 'GET' && req.url === '/audit') {
     const a = requireAuth()
     if (!a) return
     if (a.role !== 'platform') return sendJson(res, 403, { error: 'forbidden: platform only' }, rlHeaders)
-    return sendJson(res, 200, { entries: getAudit(), ledger: verifyLedger() }, rlHeaders)
+    return sendJson(res, 200, getAudit(), rlHeaders)
   }
 
   sendJson(res, 404, { error: 'not found' }, rlHeaders)

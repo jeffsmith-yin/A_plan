@@ -1,5 +1,6 @@
 // AI 智能体专家：接知识库 RAG + 制造业 Skills，做自动痛点分析（演示）
 import { loadKB, retrieve } from './rag.js'
+import { getState } from './activation.js'
 
 const ESCALATE_THRESHOLD = 0.25 // 置信度低于该值 → 升级人工
 
@@ -40,7 +41,7 @@ function buildReply({ ranked, confidence, escalate, suggestedRules, warnings, ro
   return lines.join('\n')
 }
 
-export function analyze(text, { topK = 3 } = {}) {
+export function analyze(text, { topK = 3, sub = null } = {}) {
   const kb = loadKB()
   const { hits, ranked } = retrieve(text, kb, topK)
 
@@ -67,7 +68,10 @@ export function analyze(text, { topK = 3 } = {}) {
   const confidenceR = Number(confidence.toFixed(2))
   const escalate = confidence < ESCALATE_THRESHOLD
 
-  const matchedSkills = ranked.map((r) => ({ id: r.skill.id, name: r.skill.name, score: r.score }))
+  const matchedSkills = ranked.map((r) => {
+    const state = sub ? getState(sub, r.skill.id) : 'demo' // 无 sub（公开分析）→ 模板态 demo
+    return { id: r.skill.id, name: r.skill.name, score: r.score, state, usable: state === 'activated' }
+  })
 
   const suggestedRules = []
   const warnings = []
@@ -90,6 +94,12 @@ export function analyze(text, { topK = 3 } = {}) {
     rootCause
   })
 
+  // 演示态/激活态提示（真实数据注入激活机制，接已交付 9 §七）
+  const anyDemo = matchedSkills.some((s) => s.state !== 'activated')
+  const activationNote = anyDemo
+    ? '⚠️ 部分匹配技能包仍为演示数据，须由平台协助注入真实数据后方可激活使用（仅持文件/截屏不可用）。'
+    : '✅ 匹配技能包均已注入真实数据、处于激活可用态。'
+
   return {
     role: 'AI 智能体专家',
     identityLabel: 'AI 助手（非真实自然人专家）',
@@ -101,9 +111,10 @@ export function analyze(text, { topK = 3 } = {}) {
     warnings: dedupWarnings,
     confidence: confidenceR,
     escalate,
+    activationNote,
     nextSteps: escalate
       ? ['转人工行业专家', '补充业务数据']
       : ['进入 DEMO 闯关：专家定规则→AI配Agent→企业验收', '里程碑达成触发 2-of-3 多签法币分账'],
-    reply
+    reply: reply + '\n\n' + activationNote
   }
 }

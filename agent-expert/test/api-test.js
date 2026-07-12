@@ -312,6 +312,55 @@ async function run() {
     assert.strictEqual(after.json.ledger.ok, true, '哈希链应连续完整')
   })
 
+  // ===== D2. 真实数据注入激活（演示态/激活态切换 + 注入适配层占位）=====
+  await rec('注入适配层：未购买先注入真实数据 → 409', '激活', 'P0', async (t) => {
+    const r = await req('POST', '/inject', { skillId: 'SK-005' }, authH(memberToken)) // SK-005 未购买
+    t.expected = '409 NOT_PURCHASED'
+    t.actual = `status=${r.status} code=${r.json?.code}`
+    assert.strictEqual(r.status, 409)
+    assert.strictEqual(r.json.code, 'NOT_PURCHASED')
+  })
+
+  await rec('真实数据注入：购买后注入 → 激活态', '激活', 'P0', async (t) => {
+    const r = await req('POST', '/inject', { skillId: 'SK-001' }, authH(memberToken)) // SK-001 此前已购买（演示态）
+    t.expected = '200 state=activated，含 auditRef'
+    t.actual = `status=${r.status} state=${r.json?.state} ref=${r.json?.auditRef?.slice(0, 8)}`
+    assert.strictEqual(r.status, 200)
+    assert.strictEqual(r.json.state, 'activated')
+    assert.ok(/^[0-9a-f]{64}$/.test(r.json.auditRef), '注入应返回审计交易哈希')
+  })
+
+  await rec('演示态/激活态切换：/my-skills 反映状态', '激活', 'P1', async (t) => {
+    const r = await req('GET', '/my-skills', undefined, authH(memberToken))
+    t.expected = 'SK-001=activated'
+    t.actual = `status=${r.status} skills=${r.json.skills.length}`
+    assert.strictEqual(r.status, 200)
+    const sk1 = r.json.skills.find((s) => s.skillId === 'SK-001')
+    assert.ok(sk1 && sk1.state === 'activated', 'SK-001 应已激活')
+  })
+
+  await rec('分析附激活态：注入后 matchedSkills.usable=true', '激活', 'P1', async (t) => {
+    const r = await req('POST', '/analyze', { text: '排产靠老师傅经验、交期经常延误' }, authH(memberToken))
+    t.expected = '匹配 SK-001 且其 usable=true（已激活）'
+    t.actual = `status=${r.status}`
+    assert.strictEqual(r.status, 200)
+    const sk1 = r.json.matchedSkills.find((s) => s.id === 'SK-001')
+    assert.ok(sk1, '应匹配 SK-001')
+    assert.strictEqual(sk1.state, 'activated')
+    assert.strictEqual(sk1.usable, true)
+    assert.ok(r.json.activationNote, '应含激活态提示')
+  })
+
+  await rec('注入审计：平台可查注入记录（哈希链）', '激活', 'P0', async (t) => {
+    const r = await req('GET', '/audit', undefined, authH(platformToken))
+    t.expected = 'injections 含 SK-001 注入条目；链完整'
+    t.actual = `status=${r.status} injections=${r.json.injections?.length} ledgerOk=${r.json.ledger?.ok}`
+    assert.strictEqual(r.status, 200)
+    assert.ok(Array.isArray(r.json.injections))
+    assert.ok(r.json.injections.some((e) => e.skillId === 'SK-001' && e.type === 'injection'))
+    assert.strictEqual(r.json.ledger.ok, true)
+  })
+
   // ===== E. 性能测试 =====
   let singleMs = 0
   await rec(`POST /analyze 单次响应 < ${SLA_MS}ms（SLA）`, '性能', 'P0', async (t) => {
@@ -369,7 +418,7 @@ async function run() {
   const secPass = sec.filter((r) => r.status === 'PASS').length
   console.log('\n=== 测试汇总 ===')
   console.log(`总计 ${results.length} | 通过 ${pass} | 失败 ${fail}`)
-  console.log(`功能 ${results.filter((r) => r.category === '功能').length} | 安全 ${sec.length}（通过 ${secPass}） | 隔离 ${results.filter((r) => r.category === '隔离').length} | 审计 ${results.filter((r) => r.category === '审计').length} | 性能 ${results.filter((r) => r.category === '性能').length}`)
+  console.log(`功能 ${results.filter((r) => r.category === '功能').length} | 安全 ${sec.length}（通过 ${secPass}） | 隔离 ${results.filter((r) => r.category === '隔离').length} | 审计 ${results.filter((r) => r.category === '审计').length} | 激活 ${results.filter((r) => r.category === '激活').length} | 性能 ${results.filter((r) => r.category === '性能').length}`)
   console.log(`单次 /analyze 响应：${singleMs.toFixed(1)}ms（SLA ${SLA_MS}ms）`)
   console.log(`\n总体质量门禁：${fail === 0 ? 'PASS' : 'FAIL'}`)
   await new Promise((r) => server.kill('SIGTERM', r))
