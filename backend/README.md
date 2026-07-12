@@ -38,6 +38,8 @@ npm test           # API 综合测试
 | POST | `/api/wallet/withdraw` | 提现申请 |
 | GET | `/api/dashboard` | 数据看板统计 |
 | GET | `/api/audit` | 审计视图（platform/admin） |
+| * | `/api/expert/*` | **反向代理** → agent-expert:8787（透传鉴权） |
+| GET | `/api/audit` | 审计视图（platform/admin） |
 
 ## 安全
 - 鉴权：HMAC HS256 令牌

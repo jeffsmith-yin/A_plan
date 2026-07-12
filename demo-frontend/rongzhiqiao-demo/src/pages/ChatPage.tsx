@@ -316,6 +316,10 @@ const ChatPage: React.FC = () => {
               {ROLE_LABELS[r.role].icon} {getPlatformDisplayName(r)}
             </button>
           ))}
+          <button onClick={() => navigate("/ai-expert")}
+            className="text-xs px-3 py-1.5 rounded-full border transition-all bg-white text-primary-600 border-primary-200 hover:border-primary-400">
+            🤖 {t("chat.quickAI", "AI 智能体")}
+          </button>
         </div>
       </div>
     </PageContainer>

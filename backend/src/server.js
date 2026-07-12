@@ -13,6 +13,7 @@ import { getOrders, createOrder, payOrder } from './store/orders.js'
 import { getWallet, requestWithdrawal } from './store/wallet.js'
 import { getDashboard } from './store/dashboard.js'
 import { getLedger, verifyLedger } from './audit.js'
+import { proxyExpertRequest } from './expert-proxy.js'
 
 const PORT = process.env.PORT || 3100
 const router = new Router()
@@ -145,6 +146,11 @@ const server = http.createServer(async (req, res) => {
   // 解析路径
   const url = new URL(req.url, 'http://localhost')
   const path = url.pathname
+
+  // —— 反向代理：/api/expert/* → agent-expert:8787（鉴权由 agent-expert 自行校验）——
+  if (path.startsWith('/api/expert/')) {
+    return proxyExpertRequest(req, res)
+  }
 
   // 限流
   const auth = authFromHeader(req)

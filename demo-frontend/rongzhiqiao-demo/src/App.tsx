@@ -17,6 +17,7 @@ import CheckoutPage from "./pages/CheckoutPage";
 import ProfilePage from "./pages/ProfilePage";
 import MyPage from "./pages/MyPage";
 import CirclesPage from "./pages/CirclesPage";
+import AIChatPage from "./pages/AIChatPage";
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/my" element={<MyPage />} />
         <Route path="/circles" element={<CirclesPage />} />
+        <Route path="/ai-expert" element={<AIChatPage />} />
       </Routes>
     </Router>
   );

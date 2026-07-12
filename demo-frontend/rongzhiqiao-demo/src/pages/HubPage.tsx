@@ -279,6 +279,12 @@ const HubPage: React.FC = () => {
               </span>
             )}
           </button>
+          <button onClick={() => navigate("/ai-expert")}
+            className="bg-white rounded-xl p-3 border border-gray-200 hover:border-primary-400 hover:shadow-md transition-all text-center">
+            <div className="text-xl mb-1">🤖</div>
+            <div className="font-medium text-gray-800 text-xs">{t("hub.aiExpert", "AI 智能体专家")}</div>
+            <div className="text-[10px] text-gray-400">{t("hub.aiExpertDesc", "痛点分析·技能包·激活")}</div>
+          </button>
           <button onClick={handleAddRole}
             className="bg-white rounded-xl p-3 border-2 border-dashed border-gray-300 hover:border-primary-400 hover:shadow-md transition-all text-center">
             <div className="text-xl mb-1">➕</div>

@@ -491,4 +491,40 @@ export const zhCN: Record<string, string> = {
   "play.splitNote": "⛓️ 由W3智能合约自动执行分账 · 规则透明 · 不可篡改",
   "play.viewDashboard": "📊 查看平台数据看板 →",
   "play.viewLeaderboard": "🏆 积分排行榜",
+
+  // ===== AI 智能体专家 =====
+  "aiExpert.title": "🤖 AI 智能体专家",
+  "aiExpert.subtitle": "制造业 Skills · 自动痛点分析 → 技能包购物车 → 激活可用",
+  "aiExpert.describePain": "描述企业痛点",
+  "aiExpert.phPain": "如：订单波动大、排产靠老师傅经验、交期经常延误",
+  "aiExpert.analyze": "让 AI 智能体专家分析",
+  "aiExpert.analyzing": "分析中...",
+  "aiExpert.result": "分析结果",
+  "aiExpert.confidence": "置信度",
+  "aiExpert.escalate": "建议转人工",
+  "aiExpert.category": "分类",
+  "aiExpert.rootCause": "根因推断",
+  "aiExpert.matchedSkills": "匹配技能包",
+  "aiExpert.activated": "已激活",
+  "aiExpert.demo": "演示态",
+  "aiExpert.inject": "申请注入真实数据",
+  "aiExpert.addToCart": "加入购物车",
+  "aiExpert.inCart": "已加购",
+  "aiExpert.cart": "🛒 购物车",
+  "aiExpert.refresh": "刷新",
+  "aiExpert.cartEmpty": "购物车为空，请从上方技能包推荐中添加",
+  "aiExpert.total": "合计",
+  "aiExpert.checkout": "结算 · 按创建人分成",
+  "aiExpert.settleOk": "结算成功",
+  "aiExpert.protocol": "协议",
+  "aiExpert.orderTotal": "总额",
+  "aiExpert.auditRef": "审计引用",
+  "aiExpert.disclaimer": "全部为演示数据；AI 身份已显著标识，不冒充真实自然人专家。技能包默认演示态，须购买后由平台协助注入真实数据方可激活使用。",
+
+  // ===== HubPage 快捷入口 =====
+  "hub.aiExpert": "AI 智能体专家",
+  "hub.aiExpertDesc": "痛点分析·技能包·激活",
+
+  // ===== ChatPage 快捷跳转 =====
+  "chat.quickAI": "AI 智能体",
 };

@@ -491,4 +491,40 @@ export const en: Record<string, string> = {
   "play.splitNote": "⛓️ Auto-split executed by the W3 smart contract · transparent rules · tamper-proof",
   "play.viewDashboard": "📊 View platform dashboard →",
   "play.viewLeaderboard": "🏆 Leaderboard",
+
+  // ===== AI Expert =====
+  "aiExpert.title": "🤖 AI Expert",
+  "aiExpert.subtitle": "Manufacturing Skills · Auto pain-point analysis → Skill-pack cart → Activate",
+  "aiExpert.describePain": "Describe your business pain point",
+  "aiExpert.phPain": "e.g. Order fluctuation, scheduling relies on experience, frequent delivery delays",
+  "aiExpert.analyze": "Let AI Expert Analyze",
+  "aiExpert.analyzing": "Analyzing...",
+  "aiExpert.result": "Analysis Result",
+  "aiExpert.confidence": "Confidence",
+  "aiExpert.escalate": "Escalate to Human",
+  "aiExpert.category": "Category",
+  "aiExpert.rootCause": "Root Cause",
+  "aiExpert.matchedSkills": "Matched Skill Packs",
+  "aiExpert.activated": "Activated",
+  "aiExpert.demo": "Demo",
+  "aiExpert.inject": "Request Real Data Injection",
+  "aiExpert.addToCart": "Add to Cart",
+  "aiExpert.inCart": "In Cart",
+  "aiExpert.cart": "🛒 Cart",
+  "aiExpert.refresh": "Refresh",
+  "aiExpert.cartEmpty": "Cart is empty. Add skill packs from the recommendations above.",
+  "aiExpert.total": "Total",
+  "aiExpert.checkout": "Checkout · Split by Creator",
+  "aiExpert.settleOk": "Settlement Successful",
+  "aiExpert.protocol": "Protocol",
+  "aiExpert.orderTotal": "Total",
+  "aiExpert.auditRef": "Audit Ref",
+  "aiExpert.disclaimer": "All demo data. AI identity clearly labeled, not impersonating real experts. Skill packs are demo-only by default; real data injection by platform assistance is required to activate.",
+
+  // ===== HubPage shortcut =====
+  "hub.aiExpert": "AI Expert",
+  "hub.aiExpertDesc": "Analysis·Skills·Activate",
+
+  // ===== ChatPage shortcut =====
+  "chat.quickAI": "AI Expert",
 };

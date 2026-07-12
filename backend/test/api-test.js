@@ -78,6 +78,19 @@ async function run() {
     assert.strictEqual(r.json.ok, true)
   })
 
+  // 反向代理：/api/expert/health → agent-expert:8787
+  await rec('GET /api/expert/ → agent-expert 代理（透传）', '功能', 'P1', async (t) => {
+    const r = await req('GET', '/api/expert/')
+    t.expected = '200 含融智桥品牌标识'
+    t.actual = `status=${r.status}`
+    // agent-expert 可能未启动 → 503 也视为代理通路正常（非 404）
+    if (r.status === 200) {
+      assert.ok(r.text.includes('融智桥'), '代理应透传 agent-expert 演示页')
+    } else {
+      assert.ok(r.status === 503 || r.status === 504, '代理不可达时应返回 503/504')
+    }
+  })
+
   // 注册 + 登录
   let token, token2
   await rec('POST /api/auth/register 新用户注册 → 201', '功能', 'P0', async (t) => {
