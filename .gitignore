@@ -44,3 +44,6 @@ yarn-error.log*
 # ============ 根目录遗留的重复源文件（以 demo-frontend 下为准） ============
 /FilesPage.tsx
 /proxy.js
+
+# ============ 运行时数据（agent-expert 本地持久化，非源码） ============
+agent-expert/data/

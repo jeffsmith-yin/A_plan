@@ -1,8 +1,12 @@
 // Web 演示服务：企业代表输入痛点 → AI 智能体专家自动分析 → 推荐技能包加入购物车 → 按创建人分成结算
+// 安全加固（P0）：① 鉴权（HMAC 令牌，cart/checkout/audit 强制）② 限流（固定窗口）③ 购物车按用户隔离+持久化 ④ 结算审计+哈希链存证
 import http from 'node:http'
 import { analyze } from './agent.js'
 import { loadKB } from './rag.js'
-import { addToCart, checkout, clearCart } from './cart.js'
+import { addToCart, removeFromCart, listCart, clearCart, checkout } from './cart.js'
+import { login, authFromHeader } from './auth.js'
+import { rateLimit, rateLimitHeaders, RATE_LIMIT } from './ratelimit.js'
+import { recordSettlement, getAudit, verifyLedger } from './audit.js'
 
 const PORT = process.env.PORT || 8787
 
@@ -25,6 +29,10 @@ body{margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-ser
 .field label{font-size:13px;color:var(--sub);display:block;margin-bottom:6px}
 textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:14px;font-family:inherit;min-height:88px;resize:vertical}
 .btn{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:12px;width:100%;margin-top:10px;font-size:14px}
+.login{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:12px;font-size:13px}
+.login input{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0;font-size:13px}
+.login .row{display:flex;gap:8px}
+.login .row .btn{margin-top:0;width:auto;padding:8px 14px}
 .card{background:var(--brand-l);border:1px solid var(--brand);border-radius:12px;padding:14px;margin-top:16px;font-size:14px;line-height:1.7;white-space:pre-wrap}
 .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:#eef2f5;color:var(--sub);margin-left:6px}
 .escalate{background:#fdeee2;color:var(--warm);border-color:var(--warm)}
@@ -41,6 +49,11 @@ textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px
     <div class="t2">制造业 Skills + 知识库 RAG · 自动痛点分析 → 技能包购物车 → 按创建人分成</div>
   </div>
   <div class="body">
+    <div class="login">
+      <div>🔐 演示登录（平台签发 Key）：<code>member-demo-key</code> / <code>platform-demo-key</code></div>
+      <input id="key" placeholder="输入 API Key" value="member-demo-key"/>
+      <div class="row"><button class="btn" id="login">登录</button><span id="who" style="align-self:center;color:var(--sub);font-size:12px"></span></div>
+    </div>
     <div class="field"><label>企业代表描述痛点</label>
       <textarea id="pain" placeholder="如：订单波动大、排产靠老师傅经验、交期经常延误">订单波动大、排产靠老师傅经验、交期经常延误</textarea>
     </div>
@@ -53,6 +66,15 @@ textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px
   </div>
 </div>
 <script>
+let TOKEN=null, ME=null;
+const authH=()=>TOKEN?{'Authorization':'Bearer '+TOKEN}:{};
+document.getElementById('login').onclick=async()=>{
+  const key=document.getElementById('key').value.trim();
+  const r=await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:key})});
+  const d=await r.json();
+  if(r.ok){TOKEN=d.token;ME=d;document.getElementById('who').textContent='已登录：'+d.role+' / '+d.sub;refreshCart();}
+  else alert('登录失败：'+JSON.stringify(d));
+};
 const btn=document.getElementById('go');
 btn.onclick=async()=>{
   const text=document.getElementById('pain').value.trim();
@@ -73,7 +95,6 @@ btn.onclick=async()=>{
   }catch(e){alert('分析失败：'+e.message);}
   finally{btn.disabled=false;btn.textContent='让 AI 智能体专家分析';}
 };
-
 function renderCart(skills){
   const box=document.getElementById('cart');
   if(!skills.length){box.style.display='none';return;}
@@ -84,8 +105,11 @@ function renderCart(skills){
     b.textContent='+ '+s.name+' ('+s.id+')';
     b.style.cssText='margin:4px;padding:6px 10px;border:1px solid #0e7c86;background:#e6f4f5;color:#0a5a62;border-radius:8px;font-size:12px;cursor:pointer';
     b.onclick=async()=>{
-      await fetch('/cart/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:s.id})});
-      b.disabled=true;b.textContent='✓ 已加 '+s.name;
+      if(!TOKEN){alert('请先登录');return;}
+      const res=await fetch('/cart/add',{method:'POST',headers:Object.assign({'Content-Type':'application/json'},authH()),body:JSON.stringify({id:s.id})});
+      const d=await res.json();
+      if(res.ok&&d.ok){b.disabled=true;b.textContent='✓ 已加 '+s.name;}else if(res.status===401){alert('未授权：请先登录');}
+      refreshCart();
     };
     box.appendChild(b);
   });
@@ -93,13 +117,24 @@ function renderCart(skills){
   co.textContent='结算并分成';
   co.style.cssText='display:block;width:100%;margin-top:10px;padding:10px;background:#f0883a;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer';
   co.onclick=async()=>{
-    const res=await fetch('/cart/checkout',{method:'POST'});
+    if(!TOKEN){alert('请先登录');return;}
+    const res=await fetch('/cart/checkout',{method:'POST',headers:authH()});
     const st=await res.json();
+    if(res.status===401){alert('未授权：请先登录');return;}
     renderSettle(st);
   };
   box.appendChild(co);
 }
-
+async function refreshCart(){
+  if(!TOKEN)return;
+  const r=await fetch('/cart',{headers:authH()});
+  if(!r.ok)return;
+  const d=await r.json();
+  const box=document.getElementById('cart');
+  if(!d.items.length)return;
+  let h='<div style="font-size:13px;color:#6b7785;margin:8px 0 4px">我的购物车：'+d.items.map(function(x){return x.name+'('+x.id+')';}).join('、')+'</div>';
+  box.insertAdjacentHTML('beforeend',h);
+}
 function renderSettle(st){
   const el=document.getElementById('settle');
   el.style.display='block';
@@ -158,49 +193,98 @@ function readJson(req, res, limit = 1_000_000) {
   })
 }
 
+// 统一响应头（含限流头）
+function sendJson(res, status, obj, extraHeaders = {}) {
+  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', ...extraHeaders })
+  res.end(JSON.stringify(obj))
+}
+
 const server = http.createServer(async (req, res) => {
+  // —— 限流（全局，按 token.sub 或 IP 隔离）——
+  const auth = authFromHeader(req)
+  const clientId = auth?.sub || req.socket.remoteAddress || 'anon'
+  const allowed = rateLimit(clientId)
+  const rlHeaders = rateLimitHeaders(clientId)
+  if (!allowed) {
+    sendJson(res, 429, { error: 'too many requests' }, { ...rlHeaders, 'Retry-After': String(rlHeaders['X-RateLimit-Reset']) })
+    return
+  }
+
   if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', ...rlHeaders })
     res.end(HTML)
     return
   }
+
+  // 登录：签发令牌（公开，但受限流保护）
+  if (req.method === 'POST' && req.url === '/auth/login') {
+    const data = await readJson(req, res)
+    if (!data) return
+    const r = login(data.apiKey)
+    if (!r) return sendJson(res, 401, { error: 'invalid api key' }, rlHeaders)
+    return sendJson(res, 200, r, rlHeaders)
+  }
+
+  // 痛点分析（公开，受限流保护）
   if (req.method === 'POST' && req.url === '/analyze') {
     const data = await readJson(req, res)
     if (!data) return
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
-    res.end(JSON.stringify(analyze(data.text || '')))
-    return
+    return sendJson(res, 200, analyze(data.text || ''), rlHeaders)
   }
+
+  // 以下端点需鉴权
+  const requireAuth = () => {
+    if (!auth) {
+      sendJson(res, 401, { error: 'unauthorized' }, rlHeaders)
+      return null
+    }
+    return auth
+  }
+
+  // 查看我的购物车（按当前用户隔离）
+  if (req.method === 'GET' && req.url === '/cart') {
+    const a = requireAuth()
+    if (!a) return
+    const kb = loadKB()
+    return sendJson(res, 200, { sub: a.sub, items: listCart(kb, a.sub) }, rlHeaders)
+  }
+
   if (req.method === 'POST' && req.url === '/cart/add') {
+    const a = requireAuth()
+    if (!a) return
     const data = await readJson(req, res)
     if (!data) return
-    const ok = addToCart(data.id)
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
-    res.end(JSON.stringify({ ok, id: data.id }))
-    return
+    const ok = addToCart(data.id, a.sub)
+    return sendJson(res, 200, { ok, id: data.id }, rlHeaders)
   }
+
   if (req.method === 'POST' && req.url === '/cart/checkout') {
-    try {
-      const kb = loadKB()
-      const settle = checkout(kb)
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
-      res.end(JSON.stringify(settle))
-    } catch (e) {
-      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' })
-      res.end(JSON.stringify({ error: String(e) }))
-    }
-    return
+    const a = requireAuth()
+    if (!a) return
+    const kb = loadKB()
+    const settle = checkout(kb, a.sub)
+    const audit = recordSettlement(a.sub, settle) // 结算审计 + 哈希链存证
+    return sendJson(res, 200, { ...settle, auditRef: audit.txHash }, rlHeaders)
   }
+
   if (req.method === 'POST' && req.url === '/cart/clear') {
-    clearCart()
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
-    res.end(JSON.stringify({ ok: true }))
-    return
+    const a = requireAuth()
+    if (!a) return
+    clearCart(a.sub)
+    return sendJson(res, 200, { ok: true }, rlHeaders)
   }
-  res.writeHead(404)
-  res.end('Not Found')
+
+  // 审计视图（仅 platform 角色）
+  if (req.method === 'GET' && req.url === '/audit') {
+    const a = requireAuth()
+    if (!a) return
+    if (a.role !== 'platform') return sendJson(res, 403, { error: 'forbidden: platform only' }, rlHeaders)
+    return sendJson(res, 200, { entries: getAudit(), ledger: verifyLedger() }, rlHeaders)
+  }
+
+  sendJson(res, 404, { error: 'not found' }, rlHeaders)
 })
 
 server.listen(PORT, () => {
-  console.log(`AI 智能体专家 Web 演示已启动：http://localhost:${PORT}`)
+  console.log(`AI 智能体专家 Web 演示已启动：http://localhost:${PORT}（已启用鉴权/限流/购物车隔离/结算审计）`)
 })
