@@ -7,5 +7,17 @@
     "start": "node src/server.js",
     "test": "node test/api-test.js"
   },
-  "dependencies": {}
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@tars/stream": "^2.0.3",
+    "ethers": "^6.17.0",
+    "js-sha3": "^0.9.3",
+    "secp256k1": "^5.0.1"
+  }
 }

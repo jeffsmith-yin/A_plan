@@ -13,9 +13,18 @@ let _adapterType = 'none'
 export async function initBlockchain(opts = {}) {
   // 1. 尝试 FISCO BCOS
   if (opts.fiscoUrl || process.env.FISCO_RPC_URL) {
-    const fisco = new FISCOBCOSAdapter({ rpcUrl: opts.fiscoUrl || process.env.FISCO_RPC_URL })
+    const fisco = new FISCOBCOSAdapter({
+      rpcUrl: opts.fiscoUrl || process.env.FISCO_RPC_URL,
+      groupId: opts.fiscoGroupId || process.env.FISCO_GROUP_ID,
+      chainId: opts.fiscoChainId || process.env.FISCO_CHAIN_ID,
+      privkey: opts.fiscoPrivkey || process.env.FISCO_PRIVKEY
+    })
     const ok = await fisco.connect()
     if (ok) {
+      // 设置审计合约地址（如有）
+      if (opts.fiscoContractAddr || process.env.FISCO_CONTRACT_ADDR) {
+        fisco.setContractAddress(opts.fiscoContractAddr || process.env.FISCO_CONTRACT_ADDR)
+      }
       _adapter = fisco
       _adapterType = 'fisco'
       console.log('[blockchain] 使用 FISCO BCOS 适配器')
